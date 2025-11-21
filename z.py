@@ -204,13 +204,20 @@ Sequence (per user spec):
 - click point1, wait
 - click point2, wait
 - type amount, wait
+- click point1, wait
 - click point3, wait
-- click point4, wait
+- click point2, wait
+- move to point4
 """
         print('=== AUTO-PURCHASE SEQUENCE START ===')
         pts = self.point_coords
         if not pts or not pts.get(1) or not pts.get(2) or not pts.get(3) or not pts.get(4):
             print('Auto purchase aborted: points not fully set (need points 1-4).')
+            return
+        
+        # Check if main loop is still active before starting
+        if not self.main_loop_active:
+            print('Auto purchase aborted: main loop stopped.')
             return
         
         amount = str(self.auto_purchase_amount)
@@ -220,29 +227,61 @@ Sequence (per user spec):
         keyboard.press_and_release('e')
         threading.Event().wait(self.purchase_delay_after_key)
         
+        if not self.main_loop_active:
+            return
+        
         # Click point 1
         print(f'Clicking Point 1: {pts[1]}')
         self._click_at(pts[1])
         threading.Event().wait(self.purchase_click_delay)
+        
+        if not self.main_loop_active:
+            return
         
         # Click point 2
         print(f'Clicking Point 2: {pts[2]}')
         self._click_at(pts[2])
         threading.Event().wait(self.purchase_click_delay)
         
+        if not self.main_loop_active:
+            return
+        
         # Type amount
         print(f'Typing amount: {amount}')
         keyboard.write(amount)
         threading.Event().wait(self.purchase_after_type_delay)
+        
+        if not self.main_loop_active:
+            return
+        
+        # Click point 1 again
+        print(f'Clicking Point 1: {pts[1]}')
+        self._click_at(pts[1])
+        threading.Event().wait(self.purchase_click_delay)
+        
+        if not self.main_loop_active:
+            return
         
         # Click point 3
         print(f'Clicking Point 3: {pts[3]}')
         self._click_at(pts[3])
         threading.Event().wait(self.purchase_click_delay)
         
-        # Click point 4
-        print(f'Clicking Point 4: {pts[4]}')
-        self._click_at(pts[4])
+        if not self.main_loop_active:
+            return
+        
+        # Click point 2
+        print(f'Clicking Point 2: {pts[2]}')
+        self._click_at(pts[2])
+        threading.Event().wait(self.purchase_click_delay)
+        
+        if not self.main_loop_active:
+            return
+        
+        # Move cursor to point 4 (final position, no click)
+        print(f'Moving cursor to Point 4: {pts[4]}')
+        x, y = (int(pts[4][0]), int(pts[4][1]))
+        win32api.SetCursorPos((x, y))
         threading.Event().wait(self.purchase_click_delay)
         
         print('=== AUTO-PURCHASE SEQUENCE COMPLETE ===')
