@@ -12,6 +12,36 @@ import numpy as np
 import win32api
 import win32con
 
+class ToolTip:
+    """Simple tooltip class for hover explanations"""
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tooltip_window = None
+        self.widget.bind("<Enter>", self.on_enter)
+        self.widget.bind("<Leave>", self.on_leave)
+    
+    def on_enter(self, event=None):
+        if self.tooltip_window or not self.text:
+            return
+        x = self.widget.winfo_rootx() + 20
+        y = self.widget.winfo_rooty() + 20
+        
+        self.tooltip_window = tw = tk.Toplevel(self.widget)
+        tw.wm_overrideredirect(True)
+        tw.wm_attributes('-topmost', True)  # Force tooltip to stay on top
+        tw.wm_geometry(f"+{x}+{y}")
+        
+        label = tk.Label(tw, text=self.text, justify='left',
+                        background="#ffffe0", relief='solid', borderwidth=1,
+                        font=("Arial", 9), wraplength=300, padx=5, pady=3)
+        label.pack()
+    
+    def on_leave(self, event=None):
+        if self.tooltip_window:
+            self.tooltip_window.destroy()
+            self.tooltip_window = None
+
 class HotkeyGUI:
     def __init__(self, root):
         self.root = root
@@ -66,6 +96,7 @@ class HotkeyGUI:
         main_frame.columnconfigure(0, weight=1)
         main_frame.columnconfigure(1, weight=0)
         main_frame.columnconfigure(2, weight=0)
+        main_frame.columnconfigure(3, weight=0)  # For help buttons
         title = ttk.Label(main_frame, text='🎣 GPO Autofish', font=('Arial', 16, 'bold'))
         title.grid(row=0, column=0, columnspan=3, pady=(0, 5))
         credits = ttk.Label(main_frame, text='by asphalt_cake | Public Release by Ariel', font=('Arial', 8), foreground='#888888')
@@ -75,80 +106,141 @@ class HotkeyGUI:
         self.overlay_status = ttk.Label(main_frame, text='Overlay: OFF', foreground='#55aaff')
         self.overlay_status.grid(row=3, column=0, columnspan=3, pady=5)
         ttk.Separator(main_frame, orient='horizontal').grid(row=4, column=0, columnspan=3, sticky='ew', pady=20)
-        ttk.Label(main_frame, text='Auto Purchase Settings:', font=('Arial', 12, 'bold')).grid(row=5, column=0, columnspan=3, pady=(0, 10))
-        ttk.Label(main_frame, text='Active:').grid(row=6, column=0, sticky=tk.W, pady=5)
+        ttk.Label(main_frame, text='Auto Purchase Settings:', font=('Arial', 12, 'bold')).grid(row=5, column=0, columnspan=4, pady=(0, 10))
+        
+        # Auto Purchase Active
         ttk.Label(main_frame, text='Active:').grid(row=6, column=0, sticky=tk.W, pady=5)
         self.auto_purchase_var = tk.BooleanVar(value=True)
         auto_check = ttk.Checkbutton(main_frame, variable=self.auto_purchase_var, text='Enabled')
-        auto_check.grid(row=6, column=1, columnspan=2, pady=5, sticky=tk.W)
+        auto_check.grid(row=6, column=1, pady=5, sticky=tk.W)
+        help_btn = ttk.Button(main_frame, text='?', width=3)
+        help_btn.grid(row=6, column=3, padx=5, pady=5)
+        ToolTip(help_btn, "Automatically buy bait after catching fish. Requires setting Points 1-4.")
+        
+        # Purchase Amount
+        ttk.Label(main_frame, text='Amount:').grid(row=7, column=0, sticky=tk.W, pady=5)
         self.amount_var = tk.IntVar(value=10)
         amount_spinbox = ttk.Spinbox(main_frame, from_=0, to=1000000, increment=1, textvariable=self.amount_var, width=10)
-        amount_spinbox.grid(row=7, column=1, columnspan=2, pady=5, sticky=tk.W)
+        amount_spinbox.grid(row=7, column=1, pady=5, sticky=tk.W)
+        help_btn = ttk.Button(main_frame, text='?', width=3)
+        help_btn.grid(row=7, column=3, padx=5, pady=5)
+        ToolTip(help_btn, "How much bait to buy each time (e.g., 10 = buy 10 bait)")
         self.amount_var.trace_add('write', lambda *args: setattr(self, 'auto_purchase_amount', self.amount_var.get()))
         self.auto_purchase_amount = self.amount_var.get()
+        
+        # Loops per Purchase
         ttk.Label(main_frame, text='Loops per Purchase:').grid(row=8, column=0, sticky=tk.W, pady=5)
         self.loops_var = tk.IntVar(value=10)
         loops_spinbox = ttk.Spinbox(main_frame, from_=1, to=1000000, increment=1, textvariable=self.loops_var, width=10)
-        loops_spinbox.grid(row=8, column=1, columnspan=2, pady=5, sticky=tk.W)
+        loops_spinbox.grid(row=8, column=1, pady=5, sticky=tk.W)
+        help_btn = ttk.Button(main_frame, text='?', width=3)
+        help_btn.grid(row=8, column=3, padx=5, pady=5)
+        ToolTip(help_btn, "Buy bait every X fish caught (e.g., 10 = buy bait after every 10 fish)")
         self.loops_var.trace_add('write', lambda *args: setattr(self, 'loops_per_purchase', self.loops_var.get()))
         self.loops_per_purchase = self.loops_var.get()
-        ttk.Label(main_frame, text='Point 1:').grid(row=9, column=0, sticky=tk.W, pady=5)
+        # Point buttons for auto-purchase
         self.point_buttons = {}
         self.point_coords = {1: None, 2: None, 3: None, 4: None}
+        
+        ttk.Label(main_frame, text='Point 1:').grid(row=9, column=0, sticky=tk.W, pady=5)
         self.point_buttons[1] = ttk.Button(main_frame, text='Point 1', command=lambda: self.capture_mouse_click(1))
-        self.point_buttons[1].grid(row=9, column=1, columnspan=2, pady=5, sticky=tk.W)
+        self.point_buttons[1].grid(row=9, column=1, pady=5, sticky=tk.W)
+        help_btn = ttk.Button(main_frame, text='?', width=3)
+        help_btn.grid(row=9, column=3, padx=5, pady=5)
+        ToolTip(help_btn, "Click to set: buy button/Yes location")
+        
         ttk.Label(main_frame, text='Point 2:').grid(row=10, column=0, sticky=tk.W, pady=5)
         self.point_buttons[2] = ttk.Button(main_frame, text='Point 2', command=lambda: self.capture_mouse_click(2))
-        self.point_buttons[2].grid(row=10, column=1, columnspan=2, pady=5, sticky=tk.W)
+        self.point_buttons[2].grid(row=10, column=1, pady=5, sticky=tk.W)
+        help_btn = ttk.Button(main_frame, text='?', width=3)
+        help_btn.grid(row=10, column=3, padx=5, pady=5)
+        ToolTip(help_btn, "Click to set: Amount input field location")
+        
         ttk.Label(main_frame, text='Point 3:').grid(row=11, column=0, sticky=tk.W, pady=5)
         self.point_buttons[3] = ttk.Button(main_frame, text='Point 3', command=lambda: self.capture_mouse_click(3))
-        self.point_buttons[3].grid(row=11, column=1, columnspan=2, pady=5, sticky=tk.W)
+        self.point_buttons[3].grid(row=11, column=1, pady=5, sticky=tk.W)
+        help_btn = ttk.Button(main_frame, text='?', width=3)
+        help_btn.grid(row=11, column=3, padx=5, pady=5)
+        ToolTip(help_btn, "Click to set: close button location")
+        
         ttk.Label(main_frame, text='Point 4:').grid(row=12, column=0, sticky=tk.W, pady=5)
         self.point_buttons[4] = ttk.Button(main_frame, text='Point 4', command=lambda: self.capture_mouse_click(4))
-        self.point_buttons[4].grid(row=12, column=1, columnspan=2, pady=5, sticky=tk.W)
-        ttk.Separator(main_frame, orient='horizontal').grid(row=13, column=0, columnspan=3, sticky='ew', pady=20)
-        ttk.Label(main_frame, text='PD Controller:', font=('Arial', 12, 'bold')).grid(row=14, column=0, columnspan=3, pady=(0, 10))
+        self.point_buttons[4].grid(row=12, column=1, pady=5, sticky=tk.W)
+        help_btn = ttk.Button(main_frame, text='?', width=3)
+        help_btn.grid(row=12, column=3, padx=5, pady=5)
+        ToolTip(help_btn, "Click to set: Throw Location")
+        ttk.Separator(main_frame, orient='horizontal').grid(row=13, column=0, columnspan=4, sticky='ew', pady=20)
+        ttk.Label(main_frame, text='PD Controller:', font=('Arial', 12, 'bold')).grid(row=14, column=0, columnspan=4, pady=(0, 10))
+        
         ttk.Label(main_frame, text='Kp (Proportional):').grid(row=15, column=0, sticky=tk.W, pady=5)
         self.kp_var = tk.DoubleVar(value=self.kp)
         kp_spinbox = ttk.Spinbox(main_frame, from_=0.0, to=2.0, increment=0.1, textvariable=self.kp_var, width=10)
-        kp_spinbox.grid(row=15, column=1, columnspan=2, pady=5, sticky=tk.W)
+        kp_spinbox.grid(row=15, column=1, pady=5, sticky=tk.W)
+        help_btn = ttk.Button(main_frame, text='?', width=3)
+        help_btn.grid(row=15, column=3, padx=5, pady=5)
+        ToolTip(help_btn, "How strongly to react to fish position. Higher = more aggressive corrections")
         self.kp_var.trace_add('write', lambda *args: setattr(self, 'kp', self.kp_var.get()))
+        
         ttk.Label(main_frame, text='Kd (Derivative):').grid(row=16, column=0, sticky=tk.W, pady=5)
         self.kd_var = tk.DoubleVar(value=self.kd)
         kd_spinbox = ttk.Spinbox(main_frame, from_=0.0, to=1.0, increment=0.01, textvariable=self.kd_var, width=10)
-        kd_spinbox.grid(row=16, column=1, columnspan=2, pady=5, sticky=tk.W)
+        kd_spinbox.grid(row=16, column=1, pady=5, sticky=tk.W)
+        help_btn = ttk.Button(main_frame, text='?', width=3)
+        help_btn.grid(row=16, column=3, padx=5, pady=5)
+        ToolTip(help_btn, "Smooths movement to prevent overshooting. Higher = smoother but slower")
         self.kd_var.trace_add('write', lambda *args: setattr(self, 'kd', self.kd_var.get()))
-        ttk.Separator(main_frame, orient='horizontal').grid(row=17, column=0, columnspan=3, sticky='ew', pady=20)
-        ttk.Label(main_frame, text='Timing Settings:', font=('Arial', 12, 'bold')).grid(row=18, column=0, columnspan=3, pady=(0, 10))
+        ttk.Separator(main_frame, orient='horizontal').grid(row=17, column=0, columnspan=4, sticky='ew', pady=20)
+        ttk.Label(main_frame, text='Timing Settings:', font=('Arial', 12, 'bold')).grid(row=18, column=0, columnspan=4, pady=(0, 10))
+        
         ttk.Label(main_frame, text='Scan Timeout (s):').grid(row=19, column=0, sticky=tk.W, pady=5)
         self.timeout_var = tk.DoubleVar(value=self.scan_timeout)
         timeout_spinbox = ttk.Spinbox(main_frame, from_=1.0, to=60.0, increment=1.0, textvariable=self.timeout_var, width=10)
-        timeout_spinbox.grid(row=19, column=1, columnspan=2, pady=5, sticky=tk.W)
+        timeout_spinbox.grid(row=19, column=1, pady=5, sticky=tk.W)
+        help_btn = ttk.Button(main_frame, text='?', width=3)
+        help_btn.grid(row=19, column=3, padx=5, pady=5)
+        ToolTip(help_btn, "How long to wait for fish before recasting line (seconds)")
         self.timeout_var.trace_add('write', lambda *args: setattr(self, 'scan_timeout', self.timeout_var.get()))
+        
         ttk.Label(main_frame, text='Wait After Loss (s):').grid(row=20, column=0, sticky=tk.W, pady=5)
         self.wait_var = tk.DoubleVar(value=self.wait_after_loss)
         wait_spinbox = ttk.Spinbox(main_frame, from_=0.0, to=10.0, increment=0.1, textvariable=self.wait_var, width=10)
-        wait_spinbox.grid(row=20, column=1, columnspan=2, pady=5, sticky=tk.W)
+        wait_spinbox.grid(row=20, column=1, pady=5, sticky=tk.W)
+        help_btn = ttk.Button(main_frame, text='?', width=3)
+        help_btn.grid(row=20, column=3, padx=5, pady=5)
+        ToolTip(help_btn, "Pause time after losing a fish before recasting (seconds)")
         self.wait_var.trace_add('write', lambda *args: setattr(self, 'wait_after_loss', self.wait_var.get()))
-        ttk.Separator(main_frame, orient='horizontal').grid(row=21, column=0, columnspan=3, sticky='ew', pady=20)
-        ttk.Label(main_frame, text='Hotkey Bindings:', font=('Arial', 12, 'bold')).grid(row=22, column=0, columnspan=3, pady=(0, 10))
+        ttk.Separator(main_frame, orient='horizontal').grid(row=21, column=0, columnspan=4, sticky='ew', pady=20)
+        ttk.Label(main_frame, text='Hotkey Bindings:', font=('Arial', 12, 'bold')).grid(row=22, column=0, columnspan=4, pady=(0, 10))
+        
         ttk.Label(main_frame, text='Toggle Main Loop:').grid(row=23, column=0, sticky=tk.W, pady=5)
         self.loop_key_label = ttk.Label(main_frame, text=self.hotkeys['toggle_loop'].upper(), relief=tk.RIDGE, padding=5, width=10)
         self.loop_key_label.grid(row=23, column=1, pady=5)
         self.loop_rebind_btn = ttk.Button(main_frame, text='Rebind', command=lambda: self.start_rebind('toggle_loop'))
         self.loop_rebind_btn.grid(row=23, column=2, padx=5, pady=5)
+        help_btn = ttk.Button(main_frame, text='?', width=3)
+        help_btn.grid(row=23, column=3, padx=5, pady=5)
+        ToolTip(help_btn, "Start/stop the fishing bot")
+        
         ttk.Label(main_frame, text='Toggle Overlay:').grid(row=24, column=0, sticky=tk.W, pady=5)
         self.overlay_key_label = ttk.Label(main_frame, text=self.hotkeys['toggle_overlay'].upper(), relief=tk.RIDGE, padding=5, width=10)
         self.overlay_key_label.grid(row=24, column=1, pady=5)
         self.overlay_rebind_btn = ttk.Button(main_frame, text='Rebind', command=lambda: self.start_rebind('toggle_overlay'))
         self.overlay_rebind_btn.grid(row=24, column=2, padx=5, pady=5)
+        help_btn = ttk.Button(main_frame, text='?', width=3)
+        help_btn.grid(row=24, column=3, padx=5, pady=5)
+        ToolTip(help_btn, "Show/hide blue detection area overlay")
+        
         ttk.Label(main_frame, text='Exit:').grid(row=25, column=0, sticky=tk.W, pady=5)
         self.exit_key_label = ttk.Label(main_frame, text=self.hotkeys['exit'].upper(), relief=tk.RIDGE, padding=5, width=10)
         self.exit_key_label.grid(row=25, column=1, pady=5)
         self.exit_rebind_btn = ttk.Button(main_frame, text='Rebind', command=lambda: self.start_rebind('exit'))
         self.exit_rebind_btn.grid(row=25, column=2, padx=5, pady=5)
+        help_btn = ttk.Button(main_frame, text='?', width=3)
+        help_btn.grid(row=25, column=3, padx=5, pady=5)
+        ToolTip(help_btn, "Close the application completely")
+        
         self.status_msg = ttk.Label(main_frame, text='', foreground='blue')
-        self.status_msg.grid(row=26, column=0, columnspan=3, pady=(20, 0))
+        self.status_msg.grid(row=26, column=0, columnspan=4, pady=(20, 0))
 
     def capture_mouse_click(self, idx):
         """Start a listener to capture the next mouse click and store its coordinates."""  # inserted
@@ -450,16 +542,22 @@ Sequence (per user spec):
                             break
                     if found_first:
                         break
+                current_time = time.time()
+                
                 if found_first:
                     detected = True
-                if not found_first:
-                    current_time = time.time()
+                    last_detection_time = current_time
+                else:
+                    # No blue bar found - check if we should timeout
                     if not detected and current_time - cast_time > self.scan_timeout:
-                        print('Cast timeout, recasting...')
+                        print(f'Cast timeout after {self.scan_timeout}s, recasting...')
                         self.cast_line()
                         cast_time = time.time()
+                        detected = False
                         threading.Event().wait(0.1)
                         continue
+                    
+                    # If we were previously detecting but now lost it
                     if was_detecting:
                         print('Lost detection, waiting...')
                         threading.Event().wait(self.wait_after_loss)
@@ -469,6 +567,7 @@ Sequence (per user spec):
                         detected = False
                         cast_time = time.time()
                         last_detection_time = time.time()
+                    
                     threading.Event().wait(0.1)
                     continue
                 point2_x = None
