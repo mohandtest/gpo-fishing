@@ -3,3 +3,5 @@ pynput
 pywin32
 mss
 numpy
+pillow
+pystray
