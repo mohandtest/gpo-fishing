@@ -21,24 +21,45 @@ echo ✓ Python %PYTHON_VERSION% found
 
 echo.
 echo [2/4] Upgrading pip to latest version...
-python -m pip install --upgrade pip
+python -m pip install --upgrade pip >nul 2>&1
 if errorlevel 1 (
     echo WARNING: Could not upgrade pip, continuing anyway...
+) else (
+    echo ✓ Pip upgraded successfully
 )
 
 echo.
 echo [3/4] Installing required packages...
 echo Installing core dependencies...
-pip install -r requirements.txt
+echo This may take a few minutes...
+pip install -r requirements.txt --no-warn-script-location
 if errorlevel 1 (
-    echo ERROR: Failed to install packages
+    echo ERROR: Failed to install packages from requirements.txt
     echo.
     echo Trying alternative installation method...
-    pip install keyboard pynput pywin32 mss numpy pillow pystray requests
+    echo Installing packages individually...
+    pip install customtkinter --no-warn-script-location
+    pip install darkdetect --no-warn-script-location
+    pip install keyboard --no-warn-script-location
+    pip install mss --no-warn-script-location
+    pip install numpy --no-warn-script-location
+    pip install packaging --no-warn-script-location
+    pip install pillow --no-warn-script-location
+    pip install pynput --no-warn-script-location
+    pip install pyinstaller --no-warn-script-location
+    pip install pywin32 --no-warn-script-location
+    pip install pystray --no-warn-script-location
+    pip install six --no-warn-script-location
+    
     if errorlevel 1 (
         echo ERROR: Installation failed completely
         echo.
-        echo Please try running as administrator or check your internet connection
+        echo Possible solutions:
+        echo 1. Run as administrator
+        echo 2. Check your internet connection
+        echo 3. Update Python to latest version
+        echo 4. Try: python -m pip install --user [package_name]
+        echo.
         pause
         exit /b 1
     )
@@ -47,15 +68,15 @@ echo ✓ Packages installed successfully
 
 echo.
 echo [4/4] Verifying installation...
-python -c "import keyboard, pynput, win32api, mss, numpy; print('✓ Core modules verified')" 2>nul
+python -c "import keyboard, pynput, mss, numpy, PIL; print('✓ Core modules verified')" 2>nul
 if errorlevel 1 (
     echo WARNING: Some core modules may not be properly installed
     echo The program may still work, but some features might be limited
 )
 
-python -c "import pystray, requests; print('✓ Optional modules verified')" 2>nul
+python -c "import customtkinter, pystray; print('✓ UI modules verified')" 2>nul
 if errorlevel 1 (
-    echo NOTE: Optional modules (system tray, webhooks) may be limited
+    echo NOTE: UI modules may have issues - try running as administrator
 )
 
 echo.
@@ -65,7 +86,7 @@ echo ========================================
 echo.
 echo To run GPO Autofish:
 echo   • Double-click "run.bat" (recommended)
-echo   • Or run "python z.py" in command prompt
+echo   • Or run "python src/main.py" in command prompt
 echo.
 echo Features available:
 echo   ✓ Auto-fishing with PD controller

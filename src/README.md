@@ -18,19 +18,25 @@ This directory contains the refactored source code for GPO Autofish, organized i
 From the project root directory:
 
 **Development mode (with console):**
+
 ```
 python src/main.py
 ```
+
 or use the batch file:
+
 ```
 run_dev.bat
 ```
 
 **Silent mode (no console):**
+
 ```
 pythonw src/main.py
 ```
+
 or use the batch file:
+
 ```
 run.bat
 ```
@@ -38,8 +44,9 @@ run.bat
 ## Building Executable
 
 Use the provided batch file:
+
 ```
-CompileCommand.bat
+MakeItExe.bat
 ```
 
 This will create a standalone executable in the `dist/` folder.

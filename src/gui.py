@@ -403,7 +403,7 @@ class HotkeyGUI:
         left_controls = ttk.Frame(control_panel)
         left_controls.grid(row=0, column=0, sticky='w')
         
-        self.theme_btn = ttk.Button(left_controls, text='🎨 Themes', 
+        self.theme_btn = ttk.Button(left_controls, text='🎨 Theme', 
                                    command=self.open_theme_window, style='TButton')
         self.theme_btn.pack(side=tk.LEFT, padx=(0, 8))
         
@@ -1783,8 +1783,7 @@ class HotkeyGUI:
             self.canvas.configure(bg=theme_colors["bg"])
         
         # Update theme button text
-        theme_name = self.theme_manager.themes[self.current_theme]["name"]
-        self.theme_btn.config(text=f'🎨 {theme_name}')
+        self.theme_btn.config(text='🎨 Theme')
         
         # Update logo
         self.theme_manager.update_logo()
