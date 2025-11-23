@@ -152,7 +152,8 @@ class HotkeyGUI:
         self.auto_update_enabled = False
         self.last_update_check = 0
         self.update_check_interval = 300  # Check every 5min
-        self.current_version = "1.4.1"  # Current version
+        self.pending_update = None  # Store update info when main loop is active
+        self.current_version = "1.4.2"  # Current version
         self.repo_url = "https://api.github.com/repos/arielldev/gpo-fishing/commits/main"
         
         # Performance settings
@@ -652,8 +653,16 @@ Sequence (per user spec):
         self.total_paused_time = 0
         self.reset_fish_counter()
         
+        # Clear any pending updates since we're starting fishing again
+        if self.pending_update:
+            self.pending_update = None
+        
         # Update UI
         self.loop_status.config(text='● Main Loop: ACTIVE', style='StatusOn.TLabel')
+        
+        # Notify about auto-update status if enabled
+        if self.auto_update_enabled:
+            self.status_msg.config(text='Auto-update paused during fishing', foreground='orange')
         
         # Start the loop
         self.main_loop_thread = threading.Thread(target=self.main_loop, daemon=True)
@@ -677,6 +686,14 @@ Sequence (per user spec):
         
         # Update UI
         self.loop_status.config(text='● Main Loop: PAUSED', style='StatusOff.TLabel')
+        
+        # Check for pending updates first, then check for new updates
+        if self.pending_update:
+            # Show the pending update dialog now that fishing stopped
+            self.root.after(1000, lambda: self.show_pending_update())  # Small delay to let UI settle
+        elif self.auto_update_enabled:
+            import threading
+            threading.Thread(target=self.check_for_updates, daemon=True).start()
         
         self.log('⏸️ Fishing paused', "important")
     
@@ -1869,10 +1886,13 @@ Sequence (per user spec):
         
         if self.auto_update_enabled:
             self.auto_update_btn.config(text='🔄 Auto Update: ON')
-            self.status_msg.config(text='Auto-update enabled - checking for updates...', foreground='#58a6ff')
-            # Start update checking thread
-            import threading
-            threading.Thread(target=self.check_for_updates, daemon=True).start()
+            if self.main_loop_active:
+                self.status_msg.config(text='Auto-update enabled (will check when fishing stops)', foreground='#58a6ff')
+            else:
+                self.status_msg.config(text='Auto-update enabled - checking for updates...', foreground='#58a6ff')
+                # Start update checking thread only if main loop is not active
+                import threading
+                threading.Thread(target=self.check_for_updates, daemon=True).start()
         else:
             self.auto_update_btn.config(text='🔄 Auto Update: OFF')
             self.status_msg.config(text='Auto-update disabled', foreground='orange')
@@ -1882,6 +1902,10 @@ Sequence (per user spec):
 
     def check_for_updates(self):
         """Check for updates from GitHub repository"""
+        # Don't check for updates while main loop is running
+        if self.main_loop_active:
+            return
+            
         try:
             import requests
             import time
@@ -1930,6 +1954,16 @@ Sequence (per user spec):
 
     def prompt_update(self, commit_hash, commit_message):
         """Prompt user about available update"""
+        # Don't show update dialog while main loop is running
+        if self.main_loop_active:
+            # Store update info to show later when fishing stops
+            self.pending_update = {
+                'commit_hash': commit_hash,
+                'commit_message': commit_message
+            }
+            self.status_msg.config(text='Update available - will prompt when fishing stops', foreground='#58a6ff')
+            return
+        
         import tkinter.messagebox as msgbox
         
         message = f"New update available!\n\nLatest commit: {commit_hash}\nChanges: {commit_message}\n\nWould you like to download the update?"
@@ -1938,6 +1972,26 @@ Sequence (per user spec):
             self.download_update()
         else:
             self.status_msg.config(text='Update skipped', foreground='orange')
+
+    def show_pending_update(self):
+        """Show the pending update dialog that was delayed during fishing"""
+        if not self.pending_update:
+            return
+            
+        import tkinter.messagebox as msgbox
+        
+        commit_hash = self.pending_update['commit_hash']
+        commit_message = self.pending_update['commit_message']
+        
+        message = f"Update available (found while fishing)!\n\nLatest commit: {commit_hash}\nChanges: {commit_message}\n\nWould you like to download the update?"
+        
+        if msgbox.askyesno("Update Available", message):
+            self.download_update()
+        else:
+            self.status_msg.config(text='Update skipped', foreground='orange')
+        
+        # Clear the pending update
+        self.pending_update = None
 
     def download_update(self):
         """Download and apply update automatically while preserving user settings"""
@@ -2077,10 +2131,12 @@ Sequence (per user spec):
 
     def start_auto_update_loop(self):
         """Start the auto-update checking loop"""
-        if self.auto_update_enabled:
+        if self.auto_update_enabled and not self.main_loop_active:
             import threading
             threading.Thread(target=self.check_for_updates, daemon=True).start()
-            # Schedule next check
+        
+        # Schedule next check regardless (but it will skip if main loop is active)
+        if self.auto_update_enabled:
             self.root.after(self.update_check_interval * 1000, self.start_auto_update_loop)
 
     def test_webhook(self):
