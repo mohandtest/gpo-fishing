@@ -138,6 +138,18 @@ class UpdateManager:
                     
                     self.app.update_status('Installing update...', 'info', '⚙️')
                     
+                    # Check if requirements.txt will be updated
+                    requirements_updated = False
+                    old_requirements_path = os.path.join(current_dir, 'requirements.txt')
+                    new_requirements_path = os.path.join(extracted_folder, 'requirements.txt')
+                    
+                    if os.path.exists(old_requirements_path) and os.path.exists(new_requirements_path):
+                        with open(old_requirements_path, 'r') as f:
+                            old_requirements = f.read()
+                        with open(new_requirements_path, 'r') as f:
+                            new_requirements = f.read()
+                        requirements_updated = old_requirements != new_requirements
+                    
                     for item in os.listdir(extracted_folder):
                         src = os.path.join(extracted_folder, item)
                         dst = os.path.join(current_dir, item)
@@ -159,6 +171,11 @@ class UpdateManager:
                         except Exception as e:
                             print(f"Error updating {item}: {e}")
                     
+                    # Update requirements if they changed
+                    if requirements_updated:
+                        self.app.update_status('Updating dependencies...', 'info', '📦')
+                        self._update_requirements()
+                    
                     self.app.update_status('Update installed! Restarting...', 'success', '✅')
                     self.app.root.after(2000, self._restart)
                     
@@ -167,6 +184,28 @@ class UpdateManager:
                 
         except Exception as e:
             self.app.update_status(f'Update error: {str(e)[:30]}...', 'error', '❌')
+    
+    def _update_requirements(self):
+        """Update Python packages from requirements.txt"""
+        try:
+            import subprocess
+            
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            requirements_path = os.path.join(current_dir, 'requirements.txt')
+            
+            if os.path.exists(requirements_path):
+                # Try to update requirements
+                result = subprocess.run([
+                    sys.executable, '-m', 'pip', 'install', '-r', requirements_path, '--upgrade'
+                ], capture_output=True, text=True, timeout=120)
+                
+                if result.returncode == 0:
+                    print("Requirements updated successfully")
+                else:
+                    print(f"Requirements update failed: {result.stderr}")
+            
+        except Exception as e:
+            print(f"Error updating requirements: {e}")
     
     def _restart(self):
         try:

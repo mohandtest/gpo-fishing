@@ -34,8 +34,25 @@ python -c "from PIL import Image; img = Image.open('images/icon.webp'); img.save
 echo Building EXE...
 echo.
 
-REM Build the executable with icon and version info
-pyinstaller --onefile --windowed --name "GPO_Fishing_Macro" --icon=icon.ico --version-file=version_info.txt src/main.py
+REM Build the executable with comprehensive options for standalone deployment
+pyinstaller --onefile --windowed --name "GPO_Fishing_Macro" --icon=icon.ico ^
+    --version-file=version_info.txt ^
+    --add-data "images;images" ^
+    --hidden-import=PIL ^
+    --hidden-import=PIL.Image ^
+    --hidden-import=PIL.ImageTk ^
+    --hidden-import=customtkinter ^
+    --hidden-import=pystray ^
+    --hidden-import=win32api ^
+    --hidden-import=win32con ^
+    --hidden-import=mss ^
+    --hidden-import=numpy ^
+    --hidden-import=keyboard ^
+    --hidden-import=pynput ^
+    --collect-all=customtkinter ^
+    --collect-all=pystray ^
+    --noconsole ^
+    src/main.py
 
 if errorlevel 1 (
     echo.
