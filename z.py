@@ -151,8 +151,8 @@ class HotkeyGUI:
         # Auto-update settings
         self.auto_update_enabled = False
         self.last_update_check = 0
-        self.update_check_interval = 3600  # Check every hour
-        self.current_version = "1.4.0"  # Current version
+        self.update_check_interval = 300  # Check every 5min
+        self.current_version = "1.4.1"  # Current version
         self.repo_url = "https://api.github.com/repos/arielldev/gpo-fishing/commits/main"
         
         # Performance settings
@@ -209,10 +209,14 @@ class HotkeyGUI:
         if not os.path.exists(self.presets_dir):
             os.makedirs(self.presets_dir)
         
-        # Load saved settings before creating widgets
-        self.load_default_settings()
+        # Load basic settings before creating widgets
+        self.load_basic_settings()
         
         self.create_widgets()
+        
+        # Load UI-specific settings after widgets are created
+        self.load_ui_settings()
+        
         self.apply_theme()
         self.register_hotkeys()
         
@@ -2390,8 +2394,8 @@ Sequence (per user spec):
         except Exception as e:
             print(f'Error auto-saving settings: {e}')
 
-    def load_default_settings(self):
-        """Load default settings on startup"""
+    def load_basic_settings(self):
+        """Load basic settings before UI creation"""
         settings_file = "default_settings.json"
         if not os.path.exists(settings_file):
             return  # No saved settings, use defaults
@@ -2400,17 +2404,9 @@ Sequence (per user spec):
             with open(settings_file, 'r') as f:
                 preset_data = json.load(f)
             
-            # Apply saved data
-            if hasattr(self, 'auto_purchase_var'):
-                self.auto_purchase_var.set(preset_data.get('auto_purchase_enabled', False))
+            # Load basic settings that don't require UI elements
             self.auto_purchase_amount = preset_data.get('auto_purchase_amount', 100)
             self.loops_per_purchase = preset_data.get('loops_per_purchase', 1)
-            
-            # Update spinbox variables if they exist
-            if hasattr(self, 'amount_var'):
-                self.amount_var.set(self.auto_purchase_amount)
-            if hasattr(self, 'loops_var'):
-                self.loops_var.set(self.loops_per_purchase)
             self.point_coords = preset_data.get('point_coords', {})
             self.kp = preset_data.get('kp', 0.1)
             self.kd = preset_data.get('kd', 0.5)
@@ -2423,14 +2419,41 @@ Sequence (per user spec):
             self.auto_update_enabled = preset_data.get('auto_update_enabled', False)
             self.dark_theme = preset_data.get('dark_theme', True)
             
-            # Update UI elements if they exist
+        except Exception as e:
+            print(f'Error loading basic settings: {e}')
+
+    def load_ui_settings(self):
+        """Load UI-specific settings after widgets are created"""
+        settings_file = "default_settings.json"
+        if not os.path.exists(settings_file):
+            return  # No saved settings, use defaults
+            
+        try:
+            with open(settings_file, 'r') as f:
+                preset_data = json.load(f)
+            
+            # Update UI variables if they exist
+            if hasattr(self, 'auto_purchase_var'):
+                self.auto_purchase_var.set(preset_data.get('auto_purchase_enabled', False))
+            if hasattr(self, 'amount_var'):
+                self.amount_var.set(self.auto_purchase_amount)
+            if hasattr(self, 'loops_var'):
+                self.loops_var.set(self.loops_per_purchase)
+            if hasattr(self, 'webhook_enabled_var'):
+                self.webhook_enabled_var.set(self.webhook_enabled)
+            if hasattr(self, 'webhook_url_var'):
+                self.webhook_url_var.set(self.webhook_url)
+            if hasattr(self, 'webhook_interval_var'):
+                self.webhook_interval_var.set(self.webhook_interval)
+            
+            # Update UI elements
             if hasattr(self, 'point_buttons'):
                 self.update_point_buttons()
             if hasattr(self, 'auto_update_btn'):
                 self.update_auto_update_button()
             
         except Exception as e:
-            print(f'Error loading default settings: {e}')
+            print(f'Error loading UI settings: {e}')
 
     def update_point_buttons(self):
         """Update point button texts with coordinates"""

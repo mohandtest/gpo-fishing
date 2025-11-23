@@ -1,5 +1,5 @@
 {
-  "auto_purchase_enabled": false,
+  "auto_purchase_enabled": true,
   "auto_purchase_amount": 10,
   "loops_per_purchase": 10,
   "point_coords": {
@@ -18,5 +18,5 @@
   "webhook_interval": 8,
   "auto_update_enabled": false,
   "dark_theme": true,
-  "last_saved": "2025-11-23T17:27:32.808245"
+  "last_saved": "2025-11-23T17:34:56.192099"
 }
