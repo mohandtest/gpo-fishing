@@ -13,6 +13,8 @@ class UpdateManager:
         self.check_interval = 300
         self.pending_update = None
         self.last_commit_hash = None  # Track last known commit
+        self.dismissed_updates = self._load_dismissed_updates()  # Load persisted dismissed updates
+        self._cleanup_old_dismissed_updates()  # Clean up old dismissed updates
     
     def check(self):
         if self.app.main_loop_active:
@@ -46,22 +48,25 @@ class UpdateManager:
     def _should_update(self, commit_hash):
         """Check if we should update based on commit hash comparison"""
         try:
-            # If we don't have a stored commit hash, get the current one
-            if self.last_commit_hash is None:
-                self.last_commit_hash = self._get_current_commit_hash()
+            # Get the current version from version.txt
+            current_commit = self._get_current_commit_hash()
+            
+            # Don't prompt if this update was already dismissed
+            if commit_hash in self.dismissed_updates:
+                return False
             
             # Compare commit hashes - if different, update is available
-            return commit_hash != self.last_commit_hash
+            return commit_hash != current_commit
         except Exception as e:
             return False
     
     def _get_current_commit_hash(self):
-        """Get the current commit hash from a local file or default"""
+        """Get the current commit hash from version.txt (the actual current version)"""
         try:
-            # Try to read from a version file in the project root
+            # Read from version.txt which contains the actual current version
             current_dir = os.path.dirname(os.path.abspath(__file__))
             version_file = os.path.join(current_dir, '..', 'version.txt')
-            version_file = os.path.abspath(version_file)  # Resolve the path
+            version_file = os.path.abspath(version_file)
             
             if os.path.exists(version_file):
                 with open(version_file, 'r') as f:
@@ -69,8 +74,47 @@ class UpdateManager:
         except Exception as e:
             pass
         
-        # Default to a placeholder that will trigger update check
         return "unknown"
+    
+    def _get_dismissed_file_path(self):
+        """Get path to the dismissed updates file in user's home directory"""
+        import os
+        home_dir = os.path.expanduser("~")
+        return os.path.join(home_dir, ".gpo_fishing_dismissed_updates.txt")
+    
+    def _load_dismissed_updates(self):
+        """Load dismissed updates from persistent file"""
+        try:
+            dismissed_file = self._get_dismissed_file_path()
+            if os.path.exists(dismissed_file):
+                with open(dismissed_file, 'r') as f:
+                    return set(line.strip() for line in f if line.strip())
+        except Exception as e:
+            pass
+        return set()
+    
+    def _save_dismissed_updates(self):
+        """Save dismissed updates to persistent file"""
+        try:
+            dismissed_file = self._get_dismissed_file_path()
+            with open(dismissed_file, 'w') as f:
+                for commit_hash in self.dismissed_updates:
+                    f.write(f"{commit_hash}\n")
+        except Exception as e:
+            print(f"Error saving dismissed updates: {e}")
+    
+    def _cleanup_old_dismissed_updates(self):
+        """Remove dismissed updates that are older than current version"""
+        try:
+            current_commit = self._get_current_commit_hash()
+            if current_commit != "unknown":
+                # Keep only dismissed updates that are newer than current version
+                # This prevents accumulating too many old dismissed updates
+                self.dismissed_updates = {commit for commit in self.dismissed_updates 
+                                        if commit != current_commit}
+                self._save_dismissed_updates()
+        except Exception as e:
+            pass
     
     def _save_current_commit_hash(self):
         """Save the current commit hash to prevent re-updating to the same version"""
@@ -107,8 +151,9 @@ class UpdateManager:
         if msgbox.askyesno("Update Available", message):
             self.download()
         else:
-            # Save the current commit hash so we don't keep asking about the same update
-            self._save_current_commit_hash()
+            # Mark this update as dismissed so we don't ask again
+            self.dismissed_updates.add(commit_hash)
+            self._save_dismissed_updates()
             self.app.update_status('Update skipped', 'warning', '⏭️')
     
     def show_pending(self):
@@ -123,6 +168,9 @@ class UpdateManager:
         if msgbox.askyesno("Update Available", message):
             self.download()
         else:
+            # Mark this update as dismissed so we don't ask again
+            self.dismissed_updates.add(commit_hash)
+            self._save_dismissed_updates()
             self.app.update_status('Update skipped', 'warning', '⏭️')
         
         self.pending_update = None
@@ -222,6 +270,10 @@ class UpdateManager:
                     
                     # Save the current commit hash to prevent re-updating
                     self._save_current_commit_hash()
+                    
+                    # Clear dismissed updates since we just updated
+                    self.dismissed_updates.clear()
+                    self._save_dismissed_updates()
                     
                     self.app.update_status('Update installed! Restarting...', 'success', '✅')
                     self.app.root.after(2000, self._restart)
