@@ -12,6 +12,7 @@ class UpdateManager:
         self.last_check = 0
         self.check_interval = 300  # 5 minutes
         self.pending_update = None
+        self.installed_commit = self._get_installed_commit()  # Track what's actually installed
         
     def check_for_updates(self):
         """Check for updates from GitHub repository"""
@@ -33,9 +34,8 @@ class UpdateManager:
                 commit_data = response.json()
                 commit_hash = commit_data['sha'][:7]
                 commit_message = commit_data['commit']['message'].split('\n')[0]
-                commit_date = commit_data['commit']['committer']['date']
                 
-                if self.should_update(commit_date):
+                if self.should_update(commit_hash):
                     self.app.root.after(0, lambda: self.prompt_update(commit_hash, commit_message))
                 else:
                     self.app.root.after(0, lambda: self.app.update_status('Up to date!', 'success', '✅'))
@@ -45,22 +45,67 @@ class UpdateManager:
         except Exception as e:
             self.app.root.after(0, lambda: self.app.update_status(f'Update check error: {str(e)[:30]}...', 'error', '❌'))
 
-    def should_update(self, commit_date):
-        """Simple check if we should update based on commit date"""
+    def _get_installed_commit(self):
+        """Get the currently installed commit hash"""
         try:
-            from datetime import datetime
+            import json
+            # Try to read from installed_version.json (tracks what we actually have)
+            version_file = os.path.join(os.path.dirname(__file__), '..', 'installed_version.json')
+            if os.path.exists(version_file):
+                with open(version_file, 'r') as f:
+                    data = json.load(f)
+                    return data.get('commit_hash')
+        except:
+            pass
+        return None  # Unknown version
+    
+    def _save_installed_commit_data(self, commit_data):
+        """Save the complete commit data when user actually updates"""
+        try:
+            import json
+            version_file = os.path.join(os.path.dirname(__file__), '..', 'installed_version.json')
             
-            # Parse the commit date
-            commit_dt = datetime.fromisoformat(commit_date.replace('Z', '+00:00'))
+            # Save complete commit info
+            save_data = {
+                'commit_hash': commit_data['sha'][:7],
+                'full_hash': commit_data['sha'],
+                'message': commit_data['commit']['message'].split('\n')[0],
+                'date': commit_data['commit']['committer']['date'],
+                'updated_at': time.time()
+            }
             
-            # Get current version date (you can update this when releasing)
-            # For now, assume current version is older if there's a newer commit
-            current_dt = datetime(2024, 11, 20)  # Update this date when releasing
+            with open(version_file, 'w') as f:
+                json.dump(save_data, f, indent=2)
             
-            return commit_dt > current_dt
+            self.installed_commit = save_data['commit_hash']
+            print(f"✅ Saved installed version: {save_data['commit_hash']} - {save_data['message']}")
+            
         except Exception as e:
-            print(f"Error checking update date: {e}")
-            return False  # Don't update if we can't determine
+            print(f"Error saving installed version: {e}")
+
+    def mark_current_as_installed(self):
+        """Mark the current latest commit as installed (stops nagging)"""
+        try:
+            import requests
+            import json
+            
+            response = requests.get(self.repo_url, timeout=10)
+            if response.status_code == 200:
+                commit_data = response.json()
+                self._save_installed_commit_data(commit_data)
+                return True
+        except Exception as e:
+            print(f"Error marking current version as installed: {e}")
+        return False
+
+    def should_update(self, commit_hash):
+        """Check if we should update - only if it's a different commit than installed"""
+        # If we don't know what's installed, don't spam with updates
+        if not self.installed_commit:
+            return False
+        
+        # Only update if it's actually a different commit
+        return commit_hash != self.installed_commit
 
     def prompt_update(self, commit_hash, commit_message):
         """Prompt user about available update"""
@@ -114,9 +159,8 @@ class UpdateManager:
                 commit_data = response.json()
                 commit_hash = commit_data['sha'][:7]
                 commit_message = commit_data['commit']['message'].split('\n')[0]
-                commit_date = commit_data['commit']['committer']['date']
                 
-                if self.should_update(commit_date):
+                if self.should_update(commit_hash):
                     self.app.root.after(0, lambda: self.prompt_update(commit_hash, commit_message))
                 else:
                     self.app.root.after(0, lambda: self.app.update_status('Up to date!', 'success', '✅'))
@@ -136,6 +180,12 @@ class UpdateManager:
             from datetime import datetime
             
             self.app.update_status('Downloading update...', 'info', '⬇️')
+            
+            # First, get the latest commit info to save after successful update
+            commit_response = requests.get(self.repo_url, timeout=10)
+            latest_commit_data = None
+            if commit_response.status_code == 200:
+                latest_commit_data = commit_response.json()
             
             # Download the latest version
             zip_url = "https://github.com/arielldev/gpo-fishing/archive/refs/heads/main.zip"
@@ -229,6 +279,10 @@ class UpdateManager:
                     if requirements_updated:
                         self.app.update_status('Updating dependencies...', 'info', '📦')
                         self._update_requirements()
+                    
+                    # Save the complete commit data so we never ask for this update again
+                    if latest_commit_data:
+                        self._save_installed_commit_data(latest_commit_data)
                     
                     self.app.update_status('Update installed! Restarting...', 'success', '✅')
                     self.app.root.after(2000, self._restart)
