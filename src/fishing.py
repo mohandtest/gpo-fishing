@@ -294,6 +294,9 @@ class FishingBot:
         if not self.app.main_loop_active:
             return
         
+        # Clear any existing text first
+        keyboard.press_and_release('ctrl+a')
+        
         self.app.set_recovery_state("typing", {"action": "typing_amount"})
         keyboard.write(amount)
         time.sleep(self.app.purchase_after_type_delay)
@@ -308,6 +311,9 @@ class FishingBot:
         if not self.app.main_loop_active:
             return
         
+        # Double-click point 3 to ensure it registers
+        self._click_at(pts[3])
+        time.sleep(0.1)
         self._click_at(pts[3])
         time.sleep(self.app.purchase_click_delay)
         
@@ -333,9 +339,7 @@ class FishingBot:
             x, y = (int(coords[0]), int(coords[1]))
             win32api.SetCursorPos((x, y))
             win32api.mouse_event(win32con.MOUSEEVENTF_MOVE, 0, 1, 0, 0)
-            threading.Event().wait(0.05)
             win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-            threading.Event().wait(0.05)
             win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
         except Exception as e:
             pass
