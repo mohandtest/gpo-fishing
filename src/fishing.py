@@ -294,10 +294,8 @@ class FishingBot:
         if not self.app.main_loop_active:
             return
         
-        # Clear any existing text first
-        keyboard.press_and_release('ctrl+a')
-        
         self.app.set_recovery_state("typing", {"action": "typing_amount"})
+        # Type the amount
         keyboard.write(amount)
         time.sleep(self.app.purchase_after_type_delay)
         

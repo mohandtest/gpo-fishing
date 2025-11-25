@@ -566,6 +566,7 @@ Sequence (per user spec):
         # Type amount with state tracking
         self.set_recovery_state("typing", {"action": "typing_amount", "amount": amount})
         self.log(f'Typing amount: {amount}', "verbose")
+        # Type amount
         keyboard.write(amount)
         threading.Event().wait(self.purchase_after_type_delay)
         
