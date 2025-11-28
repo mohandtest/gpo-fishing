@@ -16,8 +16,8 @@
       937
     ],
     "4": [
-      790,
-      376
+      698,
+      256
     ]
   },
   "kp": 0.1,
@@ -25,10 +25,10 @@
   "scan_timeout": 14.0,
   "wait_after_loss": 1.0,
   "smart_check_interval": 15.0,
-  "webhook_url": "https://discord.com/api/webhooks/1443458373654810635/d2ARTnyiauTk1qJD6I4bcxRl_Bfd2CBSLsnvdTP8DOBHq1AHGK0RWFBz5duwMZ4L0T53",
+  "webhook_url": "https://discord.com/api/webhooks/1443975937766064300/BZZi8oFcCZk6OUQ3Dsxgn0Q6t8vgSB2wAWN9eW_OKUocKL1AObRpi2-7R34w66SmdvHh",
   "webhook_enabled": true,
   "webhook_interval": 10,
   "dark_theme": true,
   "current_theme": "christmas",
-  "last_saved": "2025-11-27T06:38:09.721046"
+  "last_saved": "2025-11-28T16:45:48.156225"
 }
