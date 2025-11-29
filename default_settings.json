@@ -1,5 +1,5 @@
 {
-  "auto_purchase_enabled": false,
+  "auto_purchase_enabled": true,
   "auto_purchase_amount": 10,
   "loops_per_purchase": 10,
   "point_coords": {
@@ -26,21 +26,22 @@
       832
     ],
     "bait_point": [
-      967,
-      768
+      958,
+      842
     ]
   },
   "fruit_storage_enabled": true,
-  "fruit_storage_key": "1",
+  "fruit_storage_key": "2",
   "rod_key": "1",
   "kp": 0.1,
   "kd": 0.5,
   "scan_timeout": 14.0,
   "wait_after_loss": 1.0,
   "smart_check_interval": 15.0,
-  "webhook_url": "",
-  "webhook_enabled": false,
-  "webhook_interval": 10,
+  "webhook_url": "https://discord.com/api/webhooks/1444314622457810995/0WUXr1j4BfR9WJgPX1PDJbIbNgMoUXxh_WxGAGaZeBwdq0h3rsdRUKtSxbBzRt6rPn43",
+  "webhook_enabled": true,
+  "webhook_interval": 11,
+  "devil_fruit_alerts_enabled": false,
   "dark_theme": true,
   "current_theme": "christmas",
   "layout_settings": {
@@ -86,12 +87,12 @@
     }
   },
   "zoom_settings": {
-    "auto_zoom_enabled": true,
+    "auto_zoom_enabled": false,
     "zoom_out_steps": 5,
     "zoom_in_steps": 8,
     "step_delay": 0.1,
     "sequence_delay": 0.5,
     "zoom_cooldown": 2.0
   },
-  "last_saved": "2025-11-29T15:30:00.678010"
+  "last_saved": "2025-11-29T17:07:00.586779"
 }
