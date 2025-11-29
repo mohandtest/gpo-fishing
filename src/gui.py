@@ -762,7 +762,7 @@ Sequence (per user spec):
         self.recording_hotkey = action
         self.status_msg.config(text=f'Press a key to rebind \'{action}\'...', foreground='blue')
         self.loop_rebind_btn.config(state='disabled')
-        self.overlay_rebind_btn.config(state='disabled')
+        self.layout_rebind_btn.config(state='disabled')  # Fixed: was overlay_rebind_btn
         self.exit_rebind_btn.config(state='disabled')
         self.tray_rebind_btn.config(state='disabled')
         listener = pynput_keyboard.Listener(on_press=self.on_key_press)
@@ -784,7 +784,8 @@ Sequence (per user spec):
                 # Update the label
                 if self.recording_hotkey == 'toggle_loop':
                     self.loop_key_label.config(text=key_str.upper())
-
+                elif self.recording_hotkey == 'toggle_layout':
+                    self.layout_key_label.config(text=key_str.upper())
                 elif self.recording_hotkey == 'exit':
                     self.exit_key_label.config(text=key_str.upper())
                 elif self.recording_hotkey == 'toggle_tray':
@@ -792,7 +793,7 @@ Sequence (per user spec):
                 
                 self.recording_hotkey = None
                 self.loop_rebind_btn.config(state='normal')
-                self.overlay_rebind_btn.config(state='normal')
+                self.layout_rebind_btn.config(state='normal')
                 self.exit_rebind_btn.config(state='normal')
                 self.tray_rebind_btn.config(state='normal')
                 self.status_msg.config(text=f'Hotkey set to {key_str.upper()}', foreground='green')
@@ -802,7 +803,7 @@ Sequence (per user spec):
                 self.status_msg.config(text=f'Error setting hotkey: {e}', foreground='red')
                 self.recording_hotkey = None
                 self.loop_rebind_btn.config(state='normal')
-                self.overlay_rebind_btn.config(state='normal')
+                self.layout_rebind_btn.config(state='normal')
                 self.exit_rebind_btn.config(state='normal')
                 self.tray_rebind_btn.config(state='normal')
                 return False
