@@ -26,8 +26,8 @@
       832
     ],
     "bait_point": [
-      967,
-      844
+      955,
+      770
     ]
   },
   "fruit_storage_enabled": true,
@@ -38,11 +38,11 @@
   "scan_timeout": 14.0,
   "wait_after_loss": 1.0,
   "smart_check_interval": 15.0,
-  "webhook_url": "https://discord.com/api/webhooks/1444161437558636644/HKBOvfmxKZ6vhbplaNC7dD5ukbPCDPw-MZQaofsw97q5xmKkeyiB7qLQT4nlU8x53sSF",
-  "webhook_enabled": true,
-  "webhook_interval": 8,
+  "webhook_url": "",
+  "webhook_enabled": false,
+  "webhook_interval": 10,
   "dark_theme": true,
-  "current_theme": "default",
+  "current_theme": "christmas",
   "layout_settings": {
     "bar": {
       "name": "BAR LAYOUT",
@@ -57,9 +57,9 @@
         200
       ],
       "area": {
-        "x": 1058,
-        "y": 377,
-        "width": 183,
+        "x": 1018,
+        "y": 371,
+        "width": 245,
         "height": 472
       },
       "description": "Fishing Bar Detection"
@@ -93,5 +93,5 @@
     "sequence_delay": 0.5,
     "zoom_cooldown": 2.0
   },
-  "last_saved": "2025-11-29T10:41:20.319890"
+  "last_saved": "2025-11-29T12:00:09.388442"
 }

@@ -21,37 +21,48 @@ The original closed-source macro is sketchy and often flagged by antivirus softw
 
 **Features:**
 
-- Automatic fish detection and tracking
-- PD controller for smooth, accurate bar control
-- Configurable auto-purchase system for bait
-- Draggable detection overlay
-- Global hotkey support (F1/F2/F3)
-- Tunable parameters for optimal performance
-- **Modern UI** with CustomTkinter - Clean, professional interface
-- **One-click installation** with `install.bat`
-- **Silent mode** for long grinding sessions
-- **Smart logging system** with performance optimization
-- **Discord webhook integration** for progress tracking
+- **🎣 Fishing System** - Automatic fish detection and tracking with PD controller
+- **🍎 Devil Fruit Detection** - OCR-powered detection of devil fruit drops with keyword matching
+- **📦 Auto Fruit Storage** - Automatically stores devil fruits in inventory when detected
+- **🔔 Discord Webhook Alerts** - Real-time notifications for legendary devil fruit drops
+- **🛒 Auto-Purchase System** - Configurable bait purchasing with customizable intervals
+- **🎯 Auto Setup & Zoom Control** - Intelligent zoom management and layout switching
+- **🖥️ Modern UI** - Clean, professional interface with collapsible sections
+- **⚡ One-click installation** with `install.bat`
+- **🔇 Silent mode** for long grinding sessions
+- **📊 Smart logging system** with performance optimization
+- **⌨️ Global hotkey support** (F1/F2/F3/F4) - works without admin privileges
 
-## 🚀 Performance Features
+## 🚀 Key Features
 
-### Silent Mode
+### 🍎 Devil Fruit Intelligence
 
-- Use `run_silent.bat` for long grinding sessions (9+ hours)
-- No console window = better performance
-- Minimal logging to reduce memory usage
+- **OCR Detection**: Automatically detects devil fruit drops using text recognition
+- **Smart Keywords**: Recognizes phrases like "devil fruit", "check backpack", "fished up a devil"
+- **Auto Storage**: Only runs storage sequence when fruits are actually caught
+- **Webhook Alerts**: Discord notifications for legendary devil fruit drops with pity counters
+- **Recovery System**: Prevents macro issues when no fruit is detected
 
-### Smart Logging
+### 🎯 Auto Setup System
 
-- **Verbose Logging**: Toggle detailed console output in GUI
-- **Level-based System**: Important events vs debug info
-- **Auto-detection**: Silent mode automatically reduces logging
+- **Smart Zoom Control**: Automatically zooms out/in for optimal fishing view
+- **Layout Management**: Auto-switches between fishing bar and drop detection layouts
+- **Mouse Positioning**: Moves to optimal casting position (center-top screen)
+- **Menu Clearing**: Right-clicks to clear menus before casting
 
-### Long Session Optimization
+### 🛒 Enhanced Auto-Purchase
 
-- Reduced console spam during auto-purchase
-- Memory-efficient logging system
-- Clean interface without performance impact
+- **Configurable Intervals**: Buy bait every X fish caught
+- **Point-based System**: Set 4 custom points for purchase sequence
+- **Smart Recovery**: Handles purchase failures gracefully
+- **Auto-save Settings**: All configurations persist between sessions
+
+### ⚡ Performance Features
+
+- **Silent Mode**: Use `run_silent.bat` for long grinding sessions (9+ hours)
+- **Smart Logging**: Toggle verbose output, level-based system
+- **Memory Optimization**: Reduced console spam and efficient logging
+- **Clean Interface**: Modern UI without performance impact
 
 ## Installation
 
@@ -87,29 +98,41 @@ The original closed-source macro is sketchy and often flagged by antivirus softw
 
 ### First Time Setup
 
-1. Run `install.bat` to set everything up
-2. Launch with `run.bat` (shows console) or `run_silent.bat` (hidden)
-3. Position the detection overlay over your fishing bar
-4. Configure settings in the GUI (webhook, auto-purchase, etc.)
+1. **Install**: Run `install.bat` to set everything up automatically
+2. **Launch**: Use `run.bat` (with console) or `run_silent.bat` (hidden)
+3. **Configure Layouts**: Position overlays over fishing bar and drop detection areas
+4. **Set Points**: Configure fruit storage points and auto-purchase coordinates
+5. **Enable Features**: Turn on devil fruit storage, webhooks, and auto-purchase as needed
 
-### For Long Sessions (9+ hours)
+### Devil Fruit Storage Setup
 
-- Use `run_silent.bat` for best performance
-- Disable "Verbose Console Logging" in settings
-- Enable Discord webhook to track progress remotely
+1. **Enable Fruit Storage**: Check the "Enable Fruit Storage" option
+2. **Set Fruit Key**: Choose which inventory slot (1-9) to store fruits
+3. **Set Fruit Point**: Click to set where to click for fruit selection
+4. **Set Rod Key**: Choose which slot (1-9) contains your fishing rod
+5. **Set Bait Point**: Click to set where to click for bait selection
+
+### Discord Webhook Setup
+
+1. **Create Webhook**: In your Discord server → Channel Settings → Integrations → Webhooks
+2. **Copy URL**: Paste the webhook URL in the bot settings
+3. **Configure Alerts**: Enable devil fruit alerts for legendary drop notifications
+4. **Set Interval**: Choose how often to send progress updates
 
 ### Hotkeys
 
-- **F1**: Start/Stop fishing
-- **F2**: Toggle auto-purchase
-- **F3**: Emergency stop
-- **Note**: Hotkeys work without admin privileges
+- **F1**: Start/Stop fishing loop
+- **F2**: Toggle layout overlay
+- **F3**: Emergency stop and exit
+- **F4**: Minimize to system tray
+- **Note**: All hotkeys work without admin privileges
 
 ### Performance Tips
 
-- Silent mode uses less CPU and memory
-- Turn off verbose logging for smoother operation
-- Use webhook notifications instead of watching console
+- **Long Sessions**: Use `run_silent.bat` for 9+ hour sessions
+- **Reduce Logging**: Disable verbose logging for better performance
+- **Webhook Monitoring**: Use Discord alerts instead of watching console
+- **OCR Optimization**: Ensure good lighting and clear text for better fruit detection
 
 ---
 
@@ -123,15 +146,25 @@ The original closed-source macro is sketchy and often flagged by antivirus softw
 
 ### Runtime Issues
 
-- **Hotkeys not working**: Try running the macro with administrator
-- **Detection not working**: Adjust overlay position and detection settings
-- **High CPU usage**: Use silent mode (`run_silent.bat`) and disable verbose logging
+- **Hotkeys not working**: Try running with administrator privileges
+- **Fish detection failing**: Adjust overlay position over the blue fishing bar
+- **Devil fruit not detected**: Check OCR setup and drop area positioning
+- **Auto-purchase failing**: Verify all 4 purchase points are set correctly
+- **High CPU usage**: Use silent mode and disable verbose logging
+
+### Devil Fruit Issues
+
+- **Fruits not being stored**: Check if OCR detected the fruit in console logs
+- **Storage sequence running without fruit**: Ensure OCR is working properly
+- **Wrong inventory slot**: Verify fruit key setting matches your setup
+- **Rod not switching back**: Check rod key and bait point configuration
 
 ### Performance Issues
 
-- **Long sessions lagging**: Use `run_silent.bat` instead of `run.bat`
-- **Console spam**: Uncheck "Verbose Console Logging" in GUI
+- **Long sessions lagging**: Use `run_silent.bat` for better performance
+- **Console spam**: Disable "Verbose Console Logging" in settings
 - **Memory usage**: Silent mode automatically reduces memory footprint
+- **OCR slow**: Ensure Tesseract is properly installed for faster text recognition
 
 ---
 
@@ -141,17 +174,22 @@ The codebase has been refactored into a clean, modular structure:
 
 ```
 src/
-├── main.py          # Application entry point
-├── gui.py           # Main GUI and UI components
-├── fishing.py       # Fishing bot logic
-├── overlay.py       # Overlay window management
-├── webhook.py       # Discord webhook integration
-├── updater.py       # Auto-update system
-├── settings.py      # Settings management
-└── utils.py         # Utility classes
+├── main.py              # Application entry poi
+├── gui.py               # Main GUI and UI components
+├── fishing.py           # Fishing bot logic and devil fruit detection
+├── overlay.py           # Overlay window management
+├── layout_manager.py    # Layout switching and area management
+├── zoom_controller.py   # Auto zoom control system
+├── ocr_manager.py       # OCR text recognition for devil fruits
+├── webhook.py           # Discord webhook integration
+├── updater.py           # Auto-update system
+├── settings.py          # Settings management
+├── themes.py            # Theme system for UI customization
+└── utils.py             # Utility classes
 ```
 
 This modular structure makes the code:
+
 - ✅ Easier to understand and maintain
 - ✅ Better organized by functionality
 - ✅ Simpler to extend with new features
@@ -160,6 +198,7 @@ This modular structure makes the code:
 ### Modern UI with CustomTkinter
 
 The application now uses **CustomTkinter** for a modern, professional look:
+
 - Clean, modern interface with smooth animations
 - Dark/Light theme support
 - Better visual hierarchy and readability
