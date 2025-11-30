@@ -992,6 +992,12 @@ class FishingBot:
         # Step 3: Store fruit if enabled AND we actually caught a fruit
         if drop_info and drop_info.get('has_fruit', False):
             print("🍎 Fruit detected in catch - running fruit storage sequence")
+            
+            # Send webhook notification for devil fruit
+            if (hasattr(self.app, 'webhook_manager') and 
+                getattr(self.app, 'devil_fruit_webhook_enabled', True)):
+                self.app.webhook_manager.send_devil_fruit_drop(drop_info)
+            
             self.store_fruit()
         elif getattr(self.app, 'fruit_storage_enabled', False):
             print("⏭️ No fruit detected - skipping fruit storage sequence")
@@ -1121,15 +1127,8 @@ class FishingBot:
                             
                             if is_legendary:
                                 print(f"🍎 LEGENDARY DEVIL FRUIT DETECTED!")
-                                # Only send webhook if devil fruit alerts are enabled
-                                if (hasattr(self.app, 'webhook_manager') and 
-                                    getattr(self.app, 'devil_fruit_alerts_enabled', False)):
-                                    self.app.webhook_manager.send_devil_fruit_drop()
-                                    print(f"🔔 Legendary devil fruit webhook sent!")
-                                else:
-                                    print(f"🔕 Devil fruit alerts disabled - no webhook sent")
                             else:
-                                print(f"🍎 Devil fruit detected (not legendary) - no webhook sent")
+                                print(f"🍎 Devil fruit detected (not legendary)")
                         
                         # Display in drop overlay
                         if hasattr(self.app, 'overlay_manager_drop') and self.app.overlay_manager_drop.window:

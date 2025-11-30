@@ -170,7 +170,7 @@ class HotkeyGUI:
         self.webhook_enabled = False
         self.webhook_interval = 10  # Send webhook every X loops
         self.webhook_counter = 0  # Track loops for webhook
-        self.devil_fruit_alerts_enabled = False  # Devil fruit rod legendary alerts
+
         
         # Fruit storage settings
         self.fruit_storage_enabled = False
@@ -408,9 +408,11 @@ class HotkeyGUI:
         left_controls = ttk.Frame(control_panel)
         left_controls.grid(row=0, column=0, sticky='w')
         
-        self.theme_btn = ttk.Button(left_controls, text='🎨 Themes', 
-                                   command=self.theme_manager.open_theme_window, style='TButton')
-        self.theme_btn.pack(side=tk.LEFT, padx=(0, 8))
+        # Settings button (moved to left where theme button was)
+        self.settings_btn = ttk.Button(left_controls, text='⚙️ Settings', 
+                                      command=self.open_settings_window, style='TButton')
+        self.settings_btn.pack(side=tk.LEFT, padx=(0, 8))
+        ToolTip(self.settings_btn, "Open timing settings and theme options")
         
         # Right controls - removed Load button, only auto-save now
         right_controls = ttk.Frame(control_panel)
@@ -471,13 +473,9 @@ class HotkeyGUI:
         self.create_hotkeys_section(current_row)
         current_row += 1
         
-        # 6. PD Controller - Advanced settings
-        self.create_pd_controller_section(current_row)
-        current_row += 1
+
         
-        # 7. Presets - Save/load functionality
-        self.create_presets_section(current_row)
-        current_row += 1
+
         
         # Discord join section at bottom
         self.create_discord_section(current_row)
@@ -1285,63 +1283,9 @@ Sequence (per user spec):
         help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
         ToolTip(help_btn, "Click to set where to click for bait selection")
 
-    def create_pd_controller_section(self, start_row):
-        """Create the PD controller collapsible section"""
-        section = CollapsibleFrame(self.main_frame, "⚙️ PD Controller", start_row)
-        # Start collapsed by default
-        section.is_expanded = False
-        section.content_frame.pack_forget()
-        section.toggle_btn.config(text='+')
-        self.collapsible_sections['pd_controller'] = section
-        frame = section.get_content_frame()
-        
-        # Configure frame for centering
-        frame.columnconfigure((0, 1, 2), weight=1)
-        
-        row = 0
-        ttk.Label(frame, text='Kp (Proportional):').grid(row=row, column=0, sticky='e', pady=5, padx=(0, 10))
-        self.kp_var = tk.DoubleVar(value=self.kp)
-        kp_spinbox = ttk.Spinbox(frame, from_=0.0, to=2.0, increment=0.1, textvariable=self.kp_var, width=10)
-        kp_spinbox.grid(row=row, column=1, pady=5)
-        help_btn = ttk.Button(frame, text='?', width=3)
-        help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
-        ToolTip(help_btn, "How strongly to react to fish position. Higher = more aggressive corrections")
-        self.kp_var.trace_add('write', lambda *args: setattr(self, 'kp', self.kp_var.get()))
-        row += 1
-        
-        ttk.Label(frame, text='Kd (Derivative):').grid(row=row, column=0, sticky='e', pady=5, padx=(0, 10))
-        self.kd_var = tk.DoubleVar(value=self.kd)
-        kd_spinbox = ttk.Spinbox(frame, from_=0.0, to=1.0, increment=0.01, textvariable=self.kd_var, width=10)
-        kd_spinbox.grid(row=row, column=1, pady=5)
-        help_btn = ttk.Button(frame, text='?', width=3)
-        help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
-        ToolTip(help_btn, "Smooths movement to prevent overshooting. Higher = smoother but slower")
-        self.kd_var.trace_add('write', lambda *args: setattr(self, 'kd', self.kd_var.get()))
 
-    def create_presets_section(self, start_row):
-        """Create the presets save/load section"""
-        section = CollapsibleFrame(self.main_frame, "💾 Presets", start_row)
-        frame = section.get_content_frame()
-        frame.columnconfigure(1, weight=1)  # Center column expands
-        
-        row = 0
-        
-        # Save preset button (centered layout like point buttons)
-        ttk.Label(frame, text='Save:').grid(row=row, column=0, sticky='e', pady=5, padx=(0, 10))
-        save_btn = ttk.Button(frame, text='💾 Save Preset', command=self.save_preset)
-        save_btn.grid(row=row, column=1, pady=5, sticky='w')
-        help_btn = ttk.Button(frame, text='?', width=3)
-        help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
-        ToolTip(help_btn, "Save current settings (excluding webhooks and keybinds) to a preset file")
-        row += 1
-        
-        # Load preset button (centered layout like point buttons)
-        ttk.Label(frame, text='Load:').grid(row=row, column=0, sticky='e', pady=5, padx=(0, 10))
-        load_btn = ttk.Button(frame, text='📁 Load Preset', command=self.load_preset)
-        load_btn.grid(row=row, column=1, pady=5, sticky='w')
-        help_btn2 = ttk.Button(frame, text='?', width=3)
-        help_btn2.grid(row=row, column=2, padx=(10, 0), pady=5)
-        ToolTip(help_btn2, "Load settings from a preset file")
+
+
 
     def create_hotkeys_section(self, start_row):
         """Create the hotkey bindings collapsible section"""
@@ -1440,14 +1384,14 @@ Sequence (per user spec):
         self.webhook_interval_var.trace_add('write', lambda *args: (setattr(self, 'webhook_interval', self.webhook_interval_var.get()), self.auto_save_settings()))
         row += 1
         
-        # Devil Fruit Rod Legendary Alerts
-        self.devil_fruit_alerts_var = tk.BooleanVar(value=getattr(self, 'devil_fruit_alerts_enabled', False))
-        devil_fruit_check = ttk.Checkbutton(frame, text='🍎 Devil Fruit Rod Legendary Alerts', variable=self.devil_fruit_alerts_var)
+        # Devil fruit webhook notifications
+        self.devil_fruit_webhook_var = tk.BooleanVar(value=getattr(self, 'devil_fruit_webhook_enabled', True))
+        devil_fruit_check = ttk.Checkbutton(frame, text='🍎 Devil Fruit Alerts', variable=self.devil_fruit_webhook_var)
         devil_fruit_check.grid(row=row, column=0, columnspan=2, pady=5)
         help_btn = ttk.Button(frame, text='?', width=3)
         help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
-        ToolTip(help_btn, "Enable webhook alerts for legendary devil fruit drops (only if you have Devil Fruit rod)")
-        self.devil_fruit_alerts_var.trace_add('write', lambda *args: (setattr(self, 'devil_fruit_alerts_enabled', self.devil_fruit_alerts_var.get()), self.auto_save_settings()))
+        ToolTip(help_btn, "Send Discord notifications when devil fruits are caught")
+        self.devil_fruit_webhook_var.trace_add('write', lambda *args: (setattr(self, 'devil_fruit_webhook_enabled', self.devil_fruit_webhook_var.get()), self.auto_save_settings()))
         row += 1
         
         # Test webhook button
@@ -1488,6 +1432,10 @@ Sequence (per user spec):
         self.zoom_out_var = tk.IntVar(value=5)
         self.zoom_in_var = tk.IntVar(value=8)
         
+        # Add auto-save functionality to zoom variables
+        self.zoom_out_var.trace_add('write', lambda *args: (setattr(self, 'zoom_out_steps', self.zoom_out_var.get()), self.auto_save_settings()))
+        self.zoom_in_var.trace_add('write', lambda *args: (setattr(self, 'zoom_in_steps', self.zoom_in_var.get()), self.auto_save_settings()))
+        
         row += 1
         
 
@@ -1506,6 +1454,460 @@ Sequence (per user spec):
         
         # Add tooltip using the existing ToolTip class
         ToolTip(discord_btn, "Click to join our Discord community!")
+
+    def open_settings_window(self):
+        """Open modern settings window with timing and theme options"""
+        if hasattr(self, 'settings_window') and self.settings_window and self.settings_window.winfo_exists():
+            self.settings_window.lift()
+            return
+        
+        self.settings_window = tk.Toplevel(self.root)
+        self.settings_window.title('⚙️ Settings')
+        self.settings_window.geometry('700x750')
+        self.settings_window.attributes('-topmost', True)
+        self.settings_window.resizable(False, False)
+        
+        # Apply current theme colors to settings window
+        theme_colors = self.theme_manager.themes[self.current_theme]["colors"]
+        self.settings_window.configure(bg=theme_colors["bg"])
+        
+        # Configure ttk styles for settings window to match main GUI
+        style = ttk.Style()
+        
+        # Frame styles
+        style.configure('Settings.TFrame', 
+                       background=theme_colors["bg"],
+                       relief='flat')
+        
+        # Label styles  
+        style.configure('Settings.TLabel',
+                       background=theme_colors["bg"],
+                       foreground=theme_colors["fg"],
+                       font=('Segoe UI', 9))
+        
+        # Section title style
+        style.configure('SectionTitle.TLabel',
+                       background=theme_colors["bg"],
+                       foreground=theme_colors["accent"],
+                       font=('Segoe UI', 10, 'bold'))
+        
+        # Subtitle style
+        style.configure('Subtitle.TLabel',
+                       background=theme_colors["bg"],
+                       foreground=theme_colors["accent"],
+                       font=('Segoe UI', 9, 'bold'))
+        
+        # LabelFrame styles (for sections)
+        style.configure('Settings.TLabelFrame',
+                       background=theme_colors["bg"],
+                       foreground=theme_colors["accent"],
+                       relief='solid',
+                       borderwidth=1,
+                       bordercolor=theme_colors["accent"])
+        style.configure('Settings.TLabelFrame.Label',
+                       background=theme_colors["bg"],
+                       foreground=theme_colors["accent"],
+                       font=('Segoe UI', 11, 'bold'))
+        
+        # Button styles
+        style.configure('Settings.TButton',
+                       background=theme_colors["button_bg"],
+                       foreground=theme_colors["fg"],
+                       borderwidth=1,
+                       relief='flat',
+                       font=('Segoe UI', 9))
+        style.map('Settings.TButton',
+                 background=[('active', theme_colors["button_hover"])])
+        
+        # Spinbox styles
+        style.configure('Settings.TSpinbox',
+                       fieldbackground=theme_colors["button_bg"],
+                       background=theme_colors["button_bg"],
+                       foreground=theme_colors["fg"],
+                       bordercolor=theme_colors["accent"],
+                       insertcolor=theme_colors["fg"],
+                       font=('Segoe UI', 9))
+        
+        # Separator styles
+        style.configure('Settings.TSeparator',
+                       background=theme_colors["accent"])
+        
+        # Main container - simplified approach without canvas
+        main_container = ttk.Frame(self.settings_window, style='Settings.TFrame')
+        main_container.pack(fill='both', expand=True, padx=15, pady=15)
+        
+        # Top section with close button
+        top_frame = ttk.Frame(main_container, style='Settings.TFrame')
+        top_frame.pack(fill='x', pady=(0, 20))
+        top_frame.columnconfigure(1, weight=1)
+        
+        # Settings title (left)
+        title_label = ttk.Label(top_frame, text='⚙️ Settings', style='SectionTitle.TLabel')
+        title_label.grid(row=0, column=0, sticky='w')
+        
+        # Close button (center-right)
+        close_btn = ttk.Button(top_frame, text='✕ Close', command=self.settings_window.destroy, 
+                              style='Settings.TButton')
+        close_btn.grid(row=0, column=2, sticky='e')
+        
+        # Content frame - direct approach
+        content_frame = ttk.Frame(main_container, style='Settings.TFrame')
+        content_frame.pack(fill='both', expand=True)
+        
+        # Create sections directly
+        self.create_simple_timing_section(content_frame, theme_colors)
+        self.create_simple_theme_section(content_frame, theme_colors)
+        self.create_simple_presets_section(content_frame, theme_colors)
+    
+    def create_simple_timing_section(self, parent, theme_colors):
+        """Create simplified timing settings section"""
+        # Timing Settings Section
+        timing_frame = tk.LabelFrame(parent, text="⏱️ Timing Settings", 
+                                    bg=theme_colors["bg"], fg=theme_colors["accent"],
+                                    font=('Segoe UI', 11, 'bold'), padx=20, pady=15)
+        timing_frame.pack(fill='x', padx=10, pady=(0, 20))
+        
+        # PD Controller settings
+        pd_label = tk.Label(timing_frame, text="🎛️ PD Controller", 
+                           bg=theme_colors["bg"], fg=theme_colors["accent"],
+                           font=('Segoe UI', 10, 'bold'))
+        pd_label.grid(row=0, column=0, columnspan=2, sticky='w', pady=(0, 10))
+        
+        # KP setting
+        kp_label = tk.Label(timing_frame, text="Proportional Gain (KP):", 
+                           bg=theme_colors["bg"], fg=theme_colors["fg"])
+        kp_label.grid(row=1, column=0, sticky='w', pady=2)
+        
+        self.kp_var = tk.DoubleVar(value=getattr(self, 'kp', 0.2))
+        kp_spinbox = tk.Spinbox(timing_frame, from_=0.01, to=1.0, increment=0.01, 
+                               textvariable=self.kp_var, width=15,
+                               bg=theme_colors["button_bg"], fg=theme_colors["fg"],
+                               insertbackground=theme_colors["fg"], selectbackground=theme_colors["accent"],
+                               selectforeground=theme_colors["bg"], relief='flat', bd=1,
+                               highlightthickness=1, highlightcolor=theme_colors["accent"],
+                               highlightbackground=theme_colors["button_bg"])
+        kp_spinbox.grid(row=1, column=1, sticky='e', padx=(10, 0), pady=2)
+        
+        # KD setting
+        kd_label = tk.Label(timing_frame, text="Derivative Gain (KD):", 
+                           bg=theme_colors["bg"], fg=theme_colors["fg"])
+        kd_label.grid(row=2, column=0, sticky='w', pady=2)
+        
+        self.kd_var = tk.DoubleVar(value=getattr(self, 'kd', 0.6))
+        kd_spinbox = tk.Spinbox(timing_frame, from_=0.01, to=2.0, increment=0.01, 
+                               textvariable=self.kd_var, width=15,
+                               bg=theme_colors["button_bg"], fg=theme_colors["fg"],
+                               insertbackground=theme_colors["fg"], selectbackground=theme_colors["accent"],
+                               selectforeground=theme_colors["bg"], relief='flat', bd=1,
+                               highlightthickness=1, highlightcolor=theme_colors["accent"],
+                               highlightbackground=theme_colors["button_bg"])
+        kd_spinbox.grid(row=2, column=1, sticky='e', padx=(10, 0), pady=2)
+        
+        # Timeout settings
+        timeout_label = tk.Label(timing_frame, text="⏰ Timeout Settings", 
+                                bg=theme_colors["bg"], fg=theme_colors["accent"],
+                                font=('Segoe UI', 10, 'bold'))
+        timeout_label.grid(row=3, column=0, columnspan=2, sticky='w', pady=(15, 10))
+        
+        # Scan timeout
+        scan_label = tk.Label(timing_frame, text="Fish Detection Timeout (s):", 
+                             bg=theme_colors["bg"], fg=theme_colors["fg"])
+        scan_label.grid(row=4, column=0, sticky='w', pady=2)
+        
+        self.scan_timeout_var = tk.DoubleVar(value=getattr(self, 'scan_timeout', 15.0))
+        scan_spinbox = tk.Spinbox(timing_frame, from_=5.0, to=60.0, increment=1.0, 
+                                 textvariable=self.scan_timeout_var, width=15,
+                                 bg=theme_colors["button_bg"], fg=theme_colors["fg"],
+                                 insertbackground=theme_colors["fg"], selectbackground=theme_colors["accent"],
+                                 selectforeground=theme_colors["bg"], relief='flat', bd=1,
+                                 highlightthickness=1, highlightcolor=theme_colors["accent"],
+                                 highlightbackground=theme_colors["button_bg"])
+        scan_spinbox.grid(row=4, column=1, sticky='e', padx=(10, 0), pady=2)
+        
+        timing_frame.columnconfigure(1, weight=1)
+
+    def create_simple_theme_section(self, parent, theme_colors):
+        """Create simplified theme settings section"""
+        # Theme Settings Section
+        theme_frame = tk.LabelFrame(parent, text="🎨 Theme Settings", 
+                                   bg=theme_colors["bg"], fg=theme_colors["accent"],
+                                   font=('Segoe UI', 11, 'bold'), padx=20, pady=15)
+        theme_frame.pack(fill='x', padx=10, pady=(0, 20))
+        
+        # Current theme display
+        current_label = tk.Label(theme_frame, text="Current Theme:", 
+                                bg=theme_colors["bg"], fg=theme_colors["accent"],
+                                font=('Segoe UI', 10, 'bold'))
+        current_label.grid(row=0, column=0, sticky='w', pady=(0, 15))
+        
+        current_theme_name = getattr(self, 'current_theme', 'default').title()
+        theme_name_label = tk.Label(theme_frame, text=current_theme_name, 
+                                   bg=theme_colors["bg"], fg=theme_colors["fg"])
+        theme_name_label.grid(row=0, column=1, sticky='w', padx=(10, 0), pady=(0, 15))
+        
+        # Theme buttons
+        themes_info = [
+            ("Default", "default", "🔵"), ("Dark Mode", "dark", "⚫"),
+            ("Pink", "pink", "💖"), ("Christmas", "christmas", "🎄"),
+            ("Ocean", "ocean", "🌊"), ("Sunset", "sunset", "🌅"), 
+            ("Purple", "purple", "💜"), ("Neon", "neon", "⚡")
+        ]
+        
+        row = 1
+        for i, (name, theme_id, icon) in enumerate(themes_info):
+            if i % 4 == 0:  # New row every 4 themes
+                row += 1
+            col = i % 4
+            
+            theme_btn = tk.Button(theme_frame, text=f"{icon} {name}", 
+                                 bg=theme_colors["button_bg"], fg=theme_colors["fg"],
+                                 command=lambda t=theme_id: self.apply_theme_and_update(t),
+                                 width=12, relief='flat')
+            theme_btn.grid(row=row, column=col, padx=5, pady=5, sticky='ew')
+            
+            # Highlight current theme
+            if theme_id == getattr(self, 'current_theme', 'default'):
+                theme_btn.configure(bg=theme_colors["accent"], fg=theme_colors["bg"])
+        
+        # Configure grid weights
+        for i in range(4):
+            theme_frame.columnconfigure(i, weight=1)
+
+    def create_simple_presets_section(self, parent, theme_colors):
+        """Create simplified presets section for settings window"""
+        # Presets Section
+        presets_frame = tk.LabelFrame(parent, text="💾 Presets", 
+                                     bg=theme_colors["bg"], fg=theme_colors["accent"],
+                                     font=('Segoe UI', 11, 'bold'), padx=20, pady=15)
+        presets_frame.pack(fill='x', padx=10, pady=(0, 20))
+        
+        # Save preset
+        save_label = tk.Label(presets_frame, text="Save:", 
+                             bg=theme_colors["bg"], fg=theme_colors["fg"])
+        save_label.grid(row=0, column=0, sticky='w', pady=5)
+        
+        save_btn = tk.Button(presets_frame, text="💾 Save Preset", 
+                            bg=theme_colors["button_bg"], fg=theme_colors["fg"],
+                            command=self.save_preset, width=15, relief='flat')
+        save_btn.grid(row=0, column=1, sticky='w', padx=(10, 0), pady=5)
+        
+        # Load preset
+        load_label = tk.Label(presets_frame, text="Load:", 
+                             bg=theme_colors["bg"], fg=theme_colors["fg"])
+        load_label.grid(row=1, column=0, sticky='w', pady=5)
+        
+        load_btn = tk.Button(presets_frame, text="📁 Load Preset", 
+                            bg=theme_colors["button_bg"], fg=theme_colors["fg"],
+                            command=self.load_preset, width=15, relief='flat')
+        load_btn.grid(row=1, column=1, sticky='w', padx=(10, 0), pady=5)
+        
+        # Info text
+        info_label = tk.Label(presets_frame, 
+                             text="Save/load all settings except webhooks and keybinds", 
+                             bg=theme_colors["bg"], fg=theme_colors["fg"],
+                             font=('Segoe UI', 8))
+        info_label.grid(row=2, column=0, columnspan=2, sticky='w', pady=(10, 0))
+        
+        presets_frame.columnconfigure(1, weight=1)
+
+    def create_timing_settings_section_old(self, parent):
+        """Create timing settings section"""
+        # Timing Settings Section
+        timing_section = ttk.LabelFrame(parent, text="⏱️ Timing Settings", padding=20, style='Settings.TLabelFrame')
+        timing_section.pack(fill='x', padx=10, pady=(0, 20))
+        timing_section.columnconfigure(1, weight=1)
+        
+        row = 0
+        
+        # PD Controller subsection
+        pd_frame = ttk.Frame(timing_section, style='Settings.TFrame')
+        pd_frame.grid(row=row, column=0, columnspan=2, sticky='ew', pady=(0, 15))
+        pd_frame.columnconfigure(1, weight=1)
+        row += 1
+        
+        ttk.Label(pd_frame, text="🎛️ PD Controller", style='SectionTitle.TLabel').grid(row=0, column=0, columnspan=2, sticky='w', pady=(0, 10))
+        
+        # KP setting
+        ttk.Label(pd_frame, text="Proportional Gain (KP):", style='Settings.TLabel').grid(row=1, column=0, sticky='w', pady=2)
+        self.kp_var = tk.DoubleVar(value=getattr(self, 'kp', 0.2))
+        kp_spinbox = ttk.Spinbox(pd_frame, from_=0.01, to=1.0, increment=0.01, 
+                                textvariable=self.kp_var, width=15, style='Settings.TSpinbox')
+        kp_spinbox.grid(row=1, column=1, sticky='e', padx=(10, 0), pady=2)
+        self.kp_var.trace_add('write', lambda *args: (setattr(self, 'kp', self.kp_var.get()), self.auto_save_settings()))
+        
+        # KD setting
+        ttk.Label(pd_frame, text="Derivative Gain (KD):", style='Settings.TLabel').grid(row=2, column=0, sticky='w', pady=2)
+        self.kd_var = tk.DoubleVar(value=getattr(self, 'kd', 0.6))
+        kd_spinbox = ttk.Spinbox(pd_frame, from_=0.01, to=2.0, increment=0.01, 
+                                textvariable=self.kd_var, width=15, style='Settings.TSpinbox')
+        kd_spinbox.grid(row=2, column=1, sticky='e', padx=(10, 0), pady=2)
+        self.kd_var.trace_add('write', lambda *args: (setattr(self, 'kd', self.kd_var.get()), self.auto_save_settings()))
+        
+        # Separator
+        separator1 = ttk.Separator(timing_section, orient='horizontal', style='Settings.TSeparator')
+        separator1.grid(row=row, column=0, columnspan=2, sticky='ew', pady=10)
+        row += 1
+        
+        # Timeout subsection
+        timeout_frame = ttk.Frame(timing_section, style='Settings.TFrame')
+        timeout_frame.grid(row=row, column=0, columnspan=2, sticky='ew', pady=(0, 15))
+        timeout_frame.columnconfigure(1, weight=1)
+        row += 1
+        
+        ttk.Label(timeout_frame, text="⏰ Timeout Settings", style='SectionTitle.TLabel').grid(row=0, column=0, columnspan=2, sticky='w', pady=(0, 10))
+        
+        # Scan timeout
+        ttk.Label(timeout_frame, text="Fish Detection Timeout (s):", style='Settings.TLabel').grid(row=1, column=0, sticky='w', pady=2)
+        self.scan_timeout_var = tk.DoubleVar(value=getattr(self, 'scan_timeout', 15.0))
+        scan_spinbox = ttk.Spinbox(timeout_frame, from_=5.0, to=60.0, increment=1.0, 
+                                  textvariable=self.scan_timeout_var, width=15, style='Settings.TSpinbox')
+        scan_spinbox.grid(row=1, column=1, sticky='e', padx=(10, 0), pady=2)
+        self.scan_timeout_var.trace_add('write', lambda *args: (setattr(self, 'scan_timeout', self.scan_timeout_var.get()), self.auto_save_settings()))
+        
+        # Wait after loss
+        ttk.Label(timeout_frame, text="Wait After Catch (s):", style='Settings.TLabel').grid(row=2, column=0, sticky='w', pady=2)
+        self.wait_after_loss_var = tk.DoubleVar(value=getattr(self, 'wait_after_loss', 1.0))
+        wait_spinbox = ttk.Spinbox(timeout_frame, from_=0.1, to=10.0, increment=0.1, 
+                                  textvariable=self.wait_after_loss_var, width=15, style='Settings.TSpinbox')
+        wait_spinbox.grid(row=2, column=1, sticky='e', padx=(10, 0), pady=2)
+        self.wait_after_loss_var.trace_add('write', lambda *args: (setattr(self, 'wait_after_loss', self.wait_after_loss_var.get()), self.auto_save_settings()))
+        
+        # Separator
+        separator2 = ttk.Separator(timing_section, orient='horizontal', style='Settings.TSeparator')
+        separator2.grid(row=row, column=0, columnspan=2, sticky='ew', pady=10)
+        row += 1
+        
+        # Purchase timing subsection
+        purchase_frame = ttk.Frame(timing_section, style='Settings.TFrame')
+        purchase_frame.grid(row=row, column=0, columnspan=2, sticky='ew')
+        purchase_frame.columnconfigure(1, weight=1)
+        
+        ttk.Label(purchase_frame, text="🛒 Purchase Timing", style='SectionTitle.TLabel').grid(row=0, column=0, columnspan=2, sticky='w', pady=(0, 10))
+        
+        # Purchase delay after key
+        ttk.Label(purchase_frame, text="Delay After 'E' Key (s):", style='Settings.TLabel').grid(row=1, column=0, sticky='w', pady=2)
+        self.purchase_delay_var = tk.DoubleVar(value=getattr(self, 'purchase_delay_after_key', 2.0))
+        delay_spinbox = ttk.Spinbox(purchase_frame, from_=0.5, to=10.0, increment=0.1, 
+                                   textvariable=self.purchase_delay_var, width=15, style='Settings.TSpinbox')
+        delay_spinbox.grid(row=1, column=1, sticky='e', padx=(10, 0), pady=2)
+        self.purchase_delay_var.trace_add('write', lambda *args: (setattr(self, 'purchase_delay_after_key', self.purchase_delay_var.get()), self.auto_save_settings()))
+        
+        # Click delay
+        ttk.Label(purchase_frame, text="Click Delay (s):", style='Settings.TLabel').grid(row=2, column=0, sticky='w', pady=2)
+        self.click_delay_var = tk.DoubleVar(value=getattr(self, 'purchase_click_delay', 1.0))
+        click_spinbox = ttk.Spinbox(purchase_frame, from_=0.1, to=5.0, increment=0.1, 
+                                   textvariable=self.click_delay_var, width=15, style='Settings.TSpinbox')
+        click_spinbox.grid(row=2, column=1, sticky='e', padx=(10, 0), pady=2)
+        self.click_delay_var.trace_add('write', lambda *args: (setattr(self, 'purchase_click_delay', self.click_delay_var.get()), self.auto_save_settings()))
+        
+        # Type delay
+        ttk.Label(purchase_frame, text="After Type Delay (s):", style='Settings.TLabel').grid(row=3, column=0, sticky='w', pady=2)
+        self.type_delay_var = tk.DoubleVar(value=getattr(self, 'purchase_after_type_delay', 1.0))
+        type_spinbox = ttk.Spinbox(purchase_frame, from_=0.1, to=5.0, increment=0.1, 
+                                  textvariable=self.type_delay_var, width=15, style='Settings.TSpinbox')
+        type_spinbox.grid(row=3, column=1, sticky='e', padx=(10, 0), pady=2)
+        self.type_delay_var.trace_add('write', lambda *args: (setattr(self, 'purchase_after_type_delay', self.type_delay_var.get()), self.auto_save_settings()))
+
+    def create_theme_settings_section(self, parent):
+        """Create theme settings section with banner-style theme cards"""
+        # Get current theme colors
+        theme_colors = self.theme_manager.themes[self.current_theme]["colors"]
+        
+        # Theme Settings Section
+        theme_section = ttk.LabelFrame(parent, text="🎨 Theme Settings", padding=20, style='Settings.TLabelFrame')
+        theme_section.pack(fill='x', padx=10, pady=(0, 20))
+        
+        # Current theme display
+        current_frame = ttk.Frame(theme_section, style='Settings.TFrame')
+        current_frame.pack(fill='x', pady=(0, 15))
+        
+        ttk.Label(current_frame, text="Current Theme:", style='SectionTitle.TLabel').pack(side='left')
+        current_theme_name = getattr(self, 'current_theme', 'default').title()
+        ttk.Label(current_frame, text=current_theme_name, 
+                 style='Subtitle.TLabel').pack(side='left', padx=(10, 0))
+        
+        # Theme selection with banner-style cards
+        themes_info = [
+            ("Default", "default", "🔵", "Classic blue theme with modern styling"),
+            ("Dark Mode", "dark", "⚫", "Pure black theme with gray accents"),
+            ("Pink", "pink", "💖", "Light, cute pink theme with soft pastel vibes"),
+            ("Christmas", "christmas", "🎄", "Festive holiday theme with red and green"),
+            ("Ocean", "ocean", "🌊", "Cool ocean blues and aqua tones"),
+            ("Sunset", "sunset", "🌅", "Warm sunset oranges and purples"),
+            ("Purple", "purple", "💜", "Royal purple with elegant styling"),
+            ("Neon", "neon", "⚡", "Bright neon colors for vibrant experience")
+        ]
+        
+        # Create banner-style theme buttons (2 columns, wider layout)
+        themes_frame = ttk.Frame(theme_section, style='Settings.TFrame')
+        themes_frame.pack(fill='x')
+        themes_frame.columnconfigure(0, weight=1)
+        themes_frame.columnconfigure(1, weight=1)
+        
+        for i, (name, theme_id, icon, description) in enumerate(themes_info):
+            row = i // 2
+            col = i % 2
+            
+            # Create banner-style button frame using tk.Frame for better control
+            banner_frame = tk.Frame(themes_frame, 
+                                   bg=theme_colors["button_bg"], 
+                                   relief='solid', 
+                                   borderwidth=1,
+                                   highlightbackground=theme_colors["accent"],
+                                   highlightthickness=1)
+            banner_frame.grid(row=row, column=col, padx=5, pady=3, sticky='ew')
+            banner_frame.columnconfigure(1, weight=1)
+            
+            # Theme icon
+            icon_label = tk.Label(banner_frame, text=icon, font=('Segoe UI', 14),
+                                 bg=theme_colors["button_bg"], fg=theme_colors["fg"])
+            icon_label.grid(row=0, column=0, padx=(10, 5), pady=8)
+            
+            # Theme info
+            info_frame = tk.Frame(banner_frame, bg=theme_colors["button_bg"])
+            info_frame.grid(row=0, column=1, sticky='ew', padx=(0, 5), pady=5)
+            info_frame.columnconfigure(0, weight=1)
+            
+            # Theme name
+            name_label = tk.Label(info_frame, text=name, font=('Segoe UI', 10, 'bold'),
+                                 bg=theme_colors["button_bg"], fg=theme_colors["fg"])
+            name_label.grid(row=0, column=0, sticky='w')
+            
+            # Theme description
+            desc_label = tk.Label(info_frame, text=description, font=('Segoe UI', 8),
+                                 bg=theme_colors["button_bg"], fg=theme_colors["fg"])
+            desc_label.grid(row=1, column=0, sticky='w')
+            
+            # Apply button
+            apply_btn = ttk.Button(banner_frame, text='Apply', width=8, style='Settings.TButton',
+                                  command=lambda t=theme_id: self.apply_theme_and_update(t))
+            apply_btn.grid(row=0, column=2, padx=(5, 10), pady=8)
+            
+            # Highlight current theme
+            if theme_id == getattr(self, 'current_theme', 'default'):
+                banner_frame.configure(highlightbackground=theme_colors["accent"], highlightthickness=2)
+                name_label.configure(fg=theme_colors["accent"])
+    
+    def apply_theme_and_update(self, theme_id):
+        """Apply theme and update current theme display"""
+        print(f"Applying theme: {theme_id}")
+        if hasattr(self, 'theme_manager') and theme_id in self.theme_manager.themes:
+            # Apply the theme directly
+            self.current_theme = theme_id
+            self.apply_theme()
+            self.auto_save_settings()
+            
+            # Close and reopen settings window to refresh theme display
+            if hasattr(self, 'settings_window') and self.settings_window:
+                self.settings_window.destroy()
+                # Small delay to ensure window is closed
+                self.root.after(100, self.open_settings_window)
+            
+            print(f"Successfully applied {theme_id} theme")
+        else:
+            print(f"Theme {theme_id} not found or theme_manager not available")
+
+
 
     def open_discord(self):
         """Open Discord invite link in browser"""
@@ -1617,31 +2019,38 @@ Sequence (per user spec):
                      background=[('active', '#388bfd'), ('pressed', '#0969da')])
             
             style.configure('TCheckbutton',
-                          background='#0d1117',
-                          foreground='#f0f6fc',
+                          background=theme_colors["bg"],
+                          foreground=theme_colors["fg"],
                           focuscolor='none',
                           font=('Segoe UI', 9))
             style.map('TCheckbutton',
-                     background=[('active', '#0d1117')])
+                     background=[('active', theme_colors["bg"]),
+                               ('selected', theme_colors["bg"])])
             
             style.configure('TSpinbox',
-                          fieldbackground='#21262d',
-                          background='#21262d',
-                          foreground='#f0f6fc',
-                          bordercolor='#30363d',
-                          arrowcolor='#f0f6fc',
+                          fieldbackground=theme_colors["button_bg"],
+                          background=theme_colors["button_bg"],
+                          foreground=theme_colors["fg"],
+                          bordercolor=theme_colors["accent"],
+                          arrowcolor=theme_colors["fg"],
+                          insertcolor=theme_colors["fg"],
+                          selectbackground=theme_colors["accent"],
+                          selectforeground=theme_colors["bg"],
                           font=('Segoe UI', 9))
+            style.map('TSpinbox',
+                     fieldbackground=[('focus', theme_colors["button_hover"])],
+                     bordercolor=[('focus', theme_colors["accent"])])
             
-            # Scrollbar styling for dark mode
+            # Scrollbar styling using theme colors
             style.configure('Vertical.TScrollbar',
-                          background='#21262d',
-                          troughcolor='#0d1117',
-                          bordercolor='#30363d',
-                          arrowcolor='#8b949e',
-                          darkcolor='#21262d',
-                          lightcolor='#30363d')
+                          background=theme_colors["scrollbar_bg"],
+                          troughcolor=theme_colors["scrollbar_trough"],
+                          bordercolor=theme_colors["scrollbar_active"],
+                          arrowcolor=theme_colors["fg"],
+                          darkcolor=theme_colors["scrollbar_bg"],
+                          lightcolor=theme_colors["scrollbar_active"])
             style.map('Vertical.TScrollbar',
-                     background=[('active', '#30363d'), ('pressed', '#484f58')])
+                     background=[('active', theme_colors["scrollbar_active"]), ('pressed', theme_colors["scrollbar_pressed"])])
             
             # Header styling
             style.configure('Title.TLabel',
@@ -1684,8 +2093,6 @@ Sequence (per user spec):
             # Update canvas background for dark mode
             if hasattr(self, 'canvas'):
                 self.canvas.configure(bg=theme_colors["bg"])
-            
-            self.theme_btn.config(text='🎨 Themes')
         else:
             # Modern light theme with clean styling
             self.root.configure(bg=theme_colors["bg"])
@@ -1733,20 +2140,27 @@ Sequence (per user spec):
                      background=[('active', '#0860ca'), ('pressed', '#0757ba')])
             
             style.configure('TCheckbutton',
-                          background='#fafbfc',
-                          foreground='#24292f',
+                          background=theme_colors["bg"],
+                          foreground=theme_colors["fg"],
                           focuscolor='none',
                           font=('Segoe UI', 9))
             style.map('TCheckbutton',
-                     background=[('active', '#fafbfc')])
+                     background=[('active', theme_colors["bg"]),
+                               ('selected', theme_colors["bg"])])
             
             style.configure('TSpinbox',
-                          fieldbackground='#f6f8fa',
-                          background='#e1e4e8',
-                          foreground='#24292f',
-                          bordercolor='#d0d7de',
-                          arrowcolor='#24292f',
+                          fieldbackground=theme_colors["button_bg"],
+                          background=theme_colors["button_bg"],
+                          foreground=theme_colors["fg"],
+                          bordercolor=theme_colors["accent"],
+                          arrowcolor=theme_colors["fg"],
+                          insertcolor=theme_colors["fg"],
+                          selectbackground=theme_colors["accent"],
+                          selectforeground=theme_colors["bg"],
                           font=('Segoe UI', 9))
+            style.map('TSpinbox',
+                     fieldbackground=[('focus', theme_colors["button_hover"])],
+                     bordercolor=[('focus', theme_colors["accent"])])
             
             # Entry styling to match the gray theme
             style.configure('TEntry',
@@ -1756,16 +2170,16 @@ Sequence (per user spec):
                           bordercolor='#d0d7de',
                           font=('Segoe UI', 9))
             
-            # Scrollbar styling for light mode
+            # Scrollbar styling using theme colors
             style.configure('Vertical.TScrollbar',
-                          background='#e1e4e8',
-                          troughcolor='#fafbfc',
-                          bordercolor='#d0d7de',
-                          arrowcolor='#656d76',
-                          darkcolor='#e1e4e8',
-                          lightcolor='#f6f8fa')
+                          background=theme_colors["scrollbar_bg"],
+                          troughcolor=theme_colors["scrollbar_trough"],
+                          bordercolor=theme_colors["scrollbar_active"],
+                          arrowcolor=theme_colors["fg"],
+                          darkcolor=theme_colors["scrollbar_bg"],
+                          lightcolor=theme_colors["scrollbar_active"])
             style.map('Vertical.TScrollbar',
-                     background=[('active', '#d0d7de'), ('pressed', '#c6cbd1')])
+                     background=[('active', theme_colors["scrollbar_active"]), ('pressed', theme_colors["scrollbar_pressed"])])
             
             # Header styling
             style.configure('Title.TLabel',
@@ -1808,8 +2222,6 @@ Sequence (per user spec):
             # Update canvas background for light mode
             if hasattr(self, 'canvas'):
                 self.canvas.configure(bg=theme_colors["bg"])
-            
-            self.theme_btn.config(text='🎨 Themes')
         
 
 
@@ -1837,7 +2249,7 @@ Sequence (per user spec):
             'webhook_url': getattr(self, 'webhook_url', ''),
             'webhook_enabled': getattr(self, 'webhook_enabled', False),
             'webhook_interval': getattr(self, 'webhook_interval', 10),
-            'devil_fruit_alerts_enabled': getattr(self, 'devil_fruit_alerts_enabled', False),
+
             'dark_theme': getattr(self, 'dark_theme', True),
             'current_theme': getattr(self, 'current_theme', 'default'),
             'layout_settings': getattr(self.layout_manager, 'layouts', {}),
@@ -2019,7 +2431,6 @@ Sequence (per user spec):
             if new_theme != self.dark_theme:
                 self.dark_theme = new_theme
                 self.apply_theme()
-                self.theme_btn.config(text='☀ Light Mode' if self.dark_theme else '🌙 Dark Mode')
             
 
             
@@ -2080,7 +2491,7 @@ Sequence (per user spec):
             self.webhook_url = preset_data.get('webhook_url', '')
             self.webhook_enabled = preset_data.get('webhook_enabled', False)
             self.webhook_interval = preset_data.get('webhook_interval', 10)
-            self.devil_fruit_alerts_enabled = preset_data.get('devil_fruit_alerts_enabled', False)
+
             self.fruit_storage_enabled = preset_data.get('fruit_storage_enabled', False)
             self.fruit_storage_key = preset_data.get('fruit_storage_key', '3')
             self.rod_key = preset_data.get('rod_key', '1')
@@ -2130,8 +2541,7 @@ Sequence (per user spec):
                 self.webhook_url_var.set(self.webhook_url)
             if hasattr(self, 'webhook_interval_var'):
                 self.webhook_interval_var.set(self.webhook_interval)
-            if hasattr(self, 'devil_fruit_alerts_var'):
-                self.devil_fruit_alerts_var.set(self.devil_fruit_alerts_enabled)
+
             
             # Load OCR settings
             ocr_settings = preset_data.get('ocr_settings', {})

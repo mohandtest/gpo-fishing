@@ -34,7 +34,7 @@ class WebhookManager:
                 
         except Exception as e:
             print(f"❌ Webhook error: {e}")
-    
+
     def send_devil_fruit_drop(self):
         """Send webhook notification for devil fruit drops"""
         if not self.app.webhook_url or not self.app.webhook_enabled:
@@ -47,14 +47,15 @@ class WebhookManager:
             import requests
             
             embed = {
-                "title": "🏆 LEGENDARY DEVIL FRUIT! 🏆",
-                "description": "**🎉 LEGENDARY FRUIT CAUGHT 🎉**",
-                "color": 0xFFD700,  # Gold color for legendary
+                "title": "🍎 Devil Fruit Caught!",
+                "description": "Devil fruit detected and stored!",
+                "color": 0x9c27b0,  # Purple color for devil fruit
                 "fields": [
-                    {"name": "🏆 Legendary Devil Fruits", "value": str(self.devil_fruit_count), "inline": True},
+                    {"name": "🍎 Devil Fruits", "value": str(self.devil_fruit_count), "inline": True},
                     {"name": "🐟 Total Fish Caught", "value": str(self.app.fish_count), "inline": True},
+                    {"name": "⏰ Time", "value": datetime.now().strftime("%H:%M:%S"), "inline": True}
                 ],
-                "footer": {"text": "GPO Autofish - Legendary Fruit Caught!"},
+                "footer": {"text": "GPO Autofish - Devil Fruit Caught!"},
                 "timestamp": datetime.utcnow().isoformat()
             }
             
@@ -62,12 +63,14 @@ class WebhookManager:
             response = requests.post(self.app.webhook_url, json=payload, timeout=10)
             
             if response.status_code == 204:
-                print(f"🍎 DEVIL FRUIT WEBHOOK SENT! Total: {self.devil_fruit_count}")
+                print(f"🍎 Devil fruit webhook sent! Total: {self.devil_fruit_count}")
             else:
                 print(f"❌ Devil fruit webhook failed: {response.status_code}")
                 
         except Exception as e:
             print(f"❌ Devil fruit webhook error: {e}")
+    
+
     
     def send_purchase(self, amount):
         if not self.app.webhook_url or not self.app.webhook_enabled:

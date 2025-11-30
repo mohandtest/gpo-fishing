@@ -7,20 +7,61 @@ class ThemeManager:
     def __init__(self, app):
         self.app = app
         self.themes = {
-            "default": {
-                "name": "Default Theme",
-                "description": "Classic dark theme with blue accents",
+        "default": {
+    "name": "Default",
+    "description": "Dark red theme with bold, modern styling",
+    "colors": {
+        "bg": "#160003",
+        "fg": "#ffdddd",
+        "accent": "#ff4d4d",
+        "success": "#7edc92",
+        "error": "#ff3b3b",
+        "warning": "#ff9966",
+        "button_bg": "#2a0004",
+        "button_hover": "#3a0006",
+        "scrollbar_bg": "#2a0004",
+        "scrollbar_trough": "#160003",
+        "scrollbar_active": "#3a0006",
+        "scrollbar_pressed": "#55000a"
+    }
+},
+
+            "dark": {
+                "name": "Dark Mode",
+                "description": "Pure black theme with gray accents for maximum darkness",
                 "colors": {
-                    "bg": "#0d1117",
-                    "fg": "#f0f6fc",
-                    "accent": "#58a6ff",
-                    "success": "#3fb950",
-                    "error": "#f85149",
-                    "warning": "#d29922",
-                    "button_bg": "#21262d",
-                    "button_hover": "#30363d"
+                    "bg": "#000000",
+                    "fg": "#e0e0e0",
+                    "accent": "#808080",
+                    "success": "#4caf50",
+                    "error": "#f44336",
+                    "warning": "#ff9800",
+                    "button_bg": "#1a1a1a",
+                    "button_hover": "#2a2a2a",
+                    "scrollbar_bg": "#1a1a1a",
+                    "scrollbar_trough": "#000000",
+                    "scrollbar_active": "#2a2a2a",
+                    "scrollbar_pressed": "#3a3a3a"
                 }
             },
+     "pink": {
+    "name": "Pink Theme",
+    "description": "Light, cute pink theme with soft pastel vibes",
+    "colors": {
+        "bg": "#ffeef7",
+        "fg": "#4a2e3f",
+        "accent": "#ff9acb",
+        "success": "#b6f2c7",
+        "error": "#ff6fa3",
+        "warning": "#ffb78c",
+        "button_bg": "#ffd6e9",
+        "button_hover": "#ffc2e1",
+        "scrollbar_bg": "#ffd6e9",
+        "scrollbar_trough": "#ffeef7",
+        "scrollbar_active": "#ffc2e1",
+        "scrollbar_pressed": "#ffadd6"
+    }
+},
             "christmas": {
                 "name": "Christmas Theme",
                 "description": "Festive white, red and green theme for the holidays",
@@ -32,7 +73,86 @@ class ThemeManager:
                     "error": "#b22222",
                     "warning": "#ff8c00",
                     "button_bg": "#f0fff0",
-                    "button_hover": "#e8f5e8"
+                    "button_hover": "#e8f5e8",
+                    "scrollbar_bg": "#f0fff0",
+                    "scrollbar_trough": "#ffffff",
+                    "scrollbar_active": "#e8f5e8",
+                    "scrollbar_pressed": "#d0f0d0"
+                }
+            },
+            "ocean": {
+                "name": "Ocean Theme",
+                "description": "Cool ocean blues and aqua tones",
+                "colors": {
+                    "bg": "#0f1419",
+                    "fg": "#e6fffa",
+                    "accent": "#00bcd4",
+                    "success": "#4caf50",
+                    "error": "#f44336",
+                    "warning": "#ff9800",
+                    "button_bg": "#1e2a2e",
+                    "button_hover": "#2e3a3e",
+                    "scrollbar_bg": "#1e2a2e",
+                    "scrollbar_trough": "#0f1419",
+                    "scrollbar_active": "#2e3a3e",
+                    "scrollbar_pressed": "#3e4a4e"
+                }
+            },
+        "sunset": {
+    "name": "Sunset Theme",
+    "description": "Soft glowing sunset with warm oranges and dreamy purples",
+    "colors": {
+        "bg": "#3b1f3a",
+        "fg": "#ffe9d9",
+        "accent": "#ff8a4f",
+        "success": "#a5e38a",
+        "error": "#ff4f7b",
+        "warning": "#ffca73",
+        "button_bg": "#4b2947",
+        "button_hover": "#5a3256",
+        "scrollbar_bg": "#4b2947",
+        "scrollbar_trough": "#3b1f3a",
+        "scrollbar_active": "#5a3256",
+        "scrollbar_pressed": "#6a3966"
+    }
+},
+
+
+"purple": {
+    "name": "Purple Theme",
+    "description": "Deep royal purple with soft, modern highlights",
+    "colors": {
+        "bg": "#241433",
+        "fg": "#efe6ff",
+        "accent": "#b05cff",
+        "success": "#7edc92",
+        "error": "#ff4e63",
+        "warning": "#ffbb66",
+        "button_bg": "#332046",
+        "button_hover": "#402a58",
+        "scrollbar_bg": "#332046",
+        "scrollbar_trough": "#241433",
+        "scrollbar_active": "#402a58",
+        "scrollbar_pressed": "#503068"
+    }
+},
+
+            "neon": {
+                "name": "Neon Theme",
+                "description": "Bright neon colors for vibrant experience",
+                "colors": {
+                    "bg": "#0a0a0a",
+                    "fg": "#ffffff",
+                    "accent": "#00ff41",
+                    "success": "#39ff14",
+                    "error": "#ff073a",
+                    "warning": "#ffff00",
+                    "button_bg": "#1a1a1a",
+                    "button_hover": "#2a2a2a",
+                    "scrollbar_bg": "#1a1a1a",
+                    "scrollbar_trough": "#0a0a0a",
+                    "scrollbar_active": "#2a2a2a",
+                    "scrollbar_pressed": "#3a3a3a"
                 }
             }
         }
