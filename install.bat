@@ -89,45 +89,29 @@ if errorlevel 1 (
             echo ✓ EasyOCR installed with nightly builds
             goto :easyocr_success
         )
-        echo Nightly build method failed, trying standard methods...
+        echo Nightly build method failed.
         echo.
+        echo ⚠️  EasyOCR is not compatible with Python 3.14 yet.
+        echo This is expected - skipping remaining methods to avoid hanging.
+        echo Your app will work perfectly with fallback text detection!
+        echo.
+        goto :easyocr_failed
     )
     
     echo Method 2: Installing with --user flag...
-    python -m pip install --user easyocr
+    python -m pip install --user easyocr --no-warn-script-location
     if errorlevel 1 (
         echo Method 3: Installing with --force-reinstall...
-        python -m pip install --force-reinstall easyocr
+        python -m pip install --force-reinstall easyocr --no-warn-script-location
         if errorlevel 1 (
             echo Method 4: Installing dependencies separately...
-            python -m pip install torch torchvision
-            python -m pip install opencv-python
-            python -m pip install pillow
-            python -m pip install numpy
-            python -m pip install easyocr
+            python -m pip install torch torchvision --no-warn-script-location
+            python -m pip install opencv-python --no-warn-script-location
+            python -m pip install pillow --no-warn-script-location
+            python -m pip install numpy --no-warn-script-location
+            python -m pip install easyocr --no-warn-script-location
             if errorlevel 1 (
-                echo WARNING: EasyOCR installation failed completely
-                echo.
-                if "%PYTHON_314%"=="true" (
-                    echo This is likely due to Python 3.14 compatibility issues.
-                    echo.
-                    echo ℹ️  Don't worry! Your app will still work perfectly.
-                    echo The app includes fallback text detection that works without EasyOCR.
-                    echo.
-                    echo If you want full OCR support, you can:
-                    echo 1. Install nightly builds manually:
-                    echo    pip install -i https://pypi.anaconda.org/scientific-python-nightly-wheels/simple scikit-image
-                    echo    pip install easyocr
-                    echo 2. Consider using Python 3.13 for full compatibility
-                    echo 3. Wait for official Python 3.14 support
-                ) else (
-                    echo Manual installation required:
-                    echo 1. Open Command Prompt as Administrator
-                    echo 2. Run: pip install easyocr
-                    echo 3. If that fails, try: pip install --user easyocr
-                )
-                echo.
-                echo The app will use fallback text detection without OCR
+                goto :easyocr_failed
             ) else (
                 echo ✓ EasyOCR installed via dependency method
             )
@@ -140,6 +124,29 @@ if errorlevel 1 (
 ) else (
     echo ✓ EasyOCR installed successfully
 )
+goto :easyocr_success
+
+:easyocr_failed
+echo WARNING: EasyOCR installation failed completely
+echo.
+if "%PYTHON_314%"=="true" (
+    echo This is expected with Python 3.14 - EasyOCR doesn't support it yet.
+    echo.
+    echo ℹ️  Don't worry! Your app will still work perfectly.
+    echo The app includes smart fallback text detection that works without EasyOCR.
+    echo.
+    echo If you want full OCR support later, you can:
+    echo 1. Use Python 3.13 for full compatibility
+    echo 2. Wait for official Python 3.14 support
+    echo 3. Try manual installation when packages are updated
+) else (
+    echo Manual installation required:
+    echo 1. Open Command Prompt as Administrator
+    echo 2. Run: pip install easyocr
+    echo 3. If that fails, try: pip install --user easyocr
+)
+echo.
+echo The app will use fallback text detection without OCR
 
 :easyocr_success
 
