@@ -5,47 +5,30 @@ echo ========================================
 echo.
 
 echo [1/4] Checking Python installation...
-
-REM Set Python launcher environment to avoid py -3 issues
-set PYLAUNCHER_NO_SEARCH_PATH=1
-set PY_PYTHON=3
-
-REM Try different Python commands
-set PYTHON_CMD=
 python --version >nul 2>&1
-if not errorlevel 1 (
-    set PYTHON_CMD=python
-    goto python_found
+if errorlevel 1 (
+    echo ERROR: Python is not installed or not in PATH
+    echo.
+    echo Please install Python 3.8+ from https://python.org
+    echo Make sure to check "Add Python to PATH" during installation
+    echo.
+    pause
+    exit /b 1
 )
 
-py --version >nul 2>&1
-if not errorlevel 1 (
-    set PYTHON_CMD=py
-    goto python_found
+for /f "tokens=2" %%i in ('python --version 2^>^&1') do set PYTHON_VERSION=%%i
+echo ✓ Python %PYTHON_VERSION% found
+
+python -c "import sys; exit(1 if sys.version_info >= (3, 14) else 0)" 2>nul
+if errorlevel 1 (
+    echo ERROR: Python 3.14+ is not supported. Please use Python 3.12 or 3.13.
+    pause
+    exit /b 1
 )
-
-python3 --version >nul 2>&1
-if not errorlevel 1 (
-    set PYTHON_CMD=python3
-    goto python_found
-)
-
-echo ERROR: Python is not installed or not in PATH
-echo.
-echo Please install Python 3.8+ from https://python.org
-echo Make sure to check "Add Python to PATH" during installation
-echo.
-pause
-exit /b 1
-
-:python_found
-
-for /f "tokens=2" %%i in ('%PYTHON_CMD% --version 2^>^&1') do set PYTHON_VERSION=%%i
-echo ✓ Python %PYTHON_VERSION% found using: %PYTHON_CMD%
 
 echo.
 echo [2/4] Upgrading pip to latest version...
-%PYTHON_CMD% -m pip install --upgrade pip >nul 2>&1
+python -m pip install --upgrade pip >nul 2>&1
 if errorlevel 1 (
     echo WARNING: Could not upgrade pip, continuing anyway...
 ) else (
@@ -58,52 +41,76 @@ echo Installing essential dependencies directly...
 echo This may take a few minutes...
 
 echo Installing core packages...
-%PYTHON_CMD% -m pip install keyboard==0.13.5 --no-warn-script-location
-%PYTHON_CMD% -m pip install pynput==1.8.1 --no-warn-script-location
-%PYTHON_CMD% -m pip install mss==10.1.0 --no-warn-script-location
-%PYTHON_CMD% -m pip install numpy --no-warn-script-location
-%PYTHON_CMD% -m pip install pillow --no-warn-script-location
-%PYTHON_CMD% -m pip install requests --no-warn-script-location
-%PYTHON_CMD% -m pip install pywin32 --no-warn-script-location
+python -m pip install keyboard==0.13.5 --no-warn-script-location
+python -m pip install pynput==1.8.1 --no-warn-script-location
+python -m pip install mss==10.1.0 --no-warn-script-location
+python -m pip install numpy --no-warn-script-location
+python -m pip install pillow --no-warn-script-location
+python -m pip install requests --no-warn-script-location
+python -m pip install pywin32 --no-warn-script-location
+python -m pip install pystray --no-warn-script-location
 
 echo Installing OCR packages for text recognition...
 echo.
-echo Installing OpenCV for image processing (required for OCR)...
-%PYTHON_CMD% -m pip install opencv-python --no-warn-script-location
+echo Installing EasyOCR (primary text recognition)...
+python -m pip install easyocr
 if errorlevel 1 (
-    echo OpenCV installation failed, trying --user flag...
-    %PYTHON_CMD% -m pip install --user opencv-python
+    echo EasyOCR installation failed, trying alternative methods...
+    echo.
+    echo Method 1: Installing with --user flag...
+    python -m pip install --user easyocr
     if errorlevel 1 (
-        echo WARNING: OpenCV installation failed
-        echo The app will use basic text detection without advanced OCR
+        echo Method 2: Installing with --force-reinstall...
+        python -m pip install --force-reinstall easyocr
+        if errorlevel 1 (
+            echo Method 3: Installing dependencies separately...
+            python -m pip install torch torchvision
+            python -m pip install opencv-python
+            python -m pip install pillow
+            python -m pip install numpy
+            python -m pip install easyocr
+            if errorlevel 1 (
+                echo WARNING: EasyOCR installation failed completely
+                echo.
+                echo Manual installation required:
+                echo 1. Open Command Prompt as Administrator
+                echo 2. Run: pip install easyocr
+                echo 3. If that fails, try: pip install --user easyocr
+                echo.
+                echo The app will use fallback text detection without OCR
+            ) else (
+                echo ✓ EasyOCR installed via dependency method
+            )
+        ) else (
+            echo ✓ EasyOCR installed via force-reinstall
+        )
     ) else (
-        echo ✓ OpenCV installed with --user flag
+        echo ✓ EasyOCR installed via --user flag
     )
 ) else (
-    echo ✓ OpenCV installed successfully
+    echo ✓ EasyOCR installed successfully
 )
-
-
 
 echo.
-echo Installing optional advanced OCR (TrOCR - may be large download)...
-%PYTHON_CMD% -m pip install transformers torch torchvision --index-url https://download.pytorch.org/whl/cpu --no-warn-script-location
+echo Installing OpenCV for image processing...
+python -m pip install opencv-python
 if errorlevel 1 (
-    echo Advanced OCR installation failed - using basic OCR only
-    echo This is normal and the app will work fine with basic text detection
-) else (
-    echo ✓ Advanced TrOCR installed successfully
+    echo OpenCV installation failed, trying --user flag...
+    python -m pip install --user opencv-python
 )
 
+echo Installing optional UI packages...
+echo ✓ pystray already installed with core packages
+
 echo Verifying core installation...
-%PYTHON_CMD% -c "import keyboard, pynput, mss, numpy, PIL, requests, win32api; print('✓ All core packages installed')" 2>nul
+python -c "import keyboard, pynput, mss, numpy, PIL, requests, win32api, pystray; print('✓ All core packages installed')" 2>nul
 if errorlevel 1 (
     echo ERROR: Core package installation failed
     echo.
     echo Trying with --user flag...
-    %PYTHON_CMD% -m pip install --user keyboard pynput mss numpy pillow requests pywin32 opencv-python
+    python -m pip install --user keyboard pynput mss numpy pillow requests pywin32 pystray pytesseract opencv-python
     
-    %PYTHON_CMD% -c "import keyboard, pynput, mss, numpy, PIL, requests, win32api; print('✓ Core packages installed with --user')" 2>nul
+    python -c "import keyboard, pynput, mss, numpy, PIL, requests, win32api, pystray; print('✓ Core packages installed with --user')" 2>nul
     if errorlevel 1 (
         echo ERROR: Installation failed completely
         echo.
@@ -122,21 +129,32 @@ echo ✓ Packages installed successfully
 echo.
 echo [4/4] Final verification...
 echo Checking essential modules...
-%PYTHON_CMD% -c "import keyboard; print('✓ keyboard')" 2>nul || echo ✗ keyboard MISSING
-%PYTHON_CMD% -c "import pynput; print('✓ pynput')" 2>nul || echo ✗ pynput MISSING
-%PYTHON_CMD% -c "import mss; print('✓ mss')" 2>nul || echo ✗ mss MISSING
-%PYTHON_CMD% -c "import numpy; print('✓ numpy')" 2>nul || echo ✗ numpy MISSING
-%PYTHON_CMD% -c "import PIL; print('✓ pillow')" 2>nul || echo ✗ pillow MISSING
-%PYTHON_CMD% -c "import requests; print('✓ requests')" 2>nul || echo ✗ requests MISSING
-%PYTHON_CMD% -c "import win32api; print('✓ pywin32')" 2>nul || echo ✗ pywin32 MISSING
+python -c "import keyboard; print('✓ keyboard')" 2>nul || echo ✗ keyboard MISSING
+python -c "import pynput; print('✓ pynput')" 2>nul || echo ✗ pynput MISSING
+python -c "import mss; print('✓ mss')" 2>nul || echo ✗ mss MISSING
+python -c "import numpy; print('✓ numpy')" 2>nul || echo ✗ numpy MISSING
+python -c "import PIL; print('✓ pillow')" 2>nul || echo ✗ pillow MISSING
+python -c "import requests; print('✓ requests')" 2>nul || echo ✗ requests MISSING
+python -c "import win32api; print('✓ pywin32')" 2>nul || echo ✗ pywin32 MISSING
+python -c "import pystray; print('✓ pystray')" 2>nul || echo ✗ pystray MISSING
 
-echo Checking OCR modules...
-%PYTHON_CMD% -c "import cv2; print('✓ opencv-python (image processing available)')" 2>nul || echo ✗ opencv-python (image processing disabled)
-%PYTHON_CMD% -c "import transformers; print('✓ TrOCR (advanced text recognition available)')" 2>nul || echo ✗ TrOCR (advanced OCR disabled - using basic OCR only)
+echo Checking optional modules...
+echo ✓ pystray already verified above
+python -c "import easyocr; print('✓ EasyOCR (text recognition available)')" 2>nul || echo ✗ EasyOCR (text recognition disabled - using fallback detection)
+python -c "import cv2; print('✓ opencv-python (image processing)')" 2>nul || echo ✗ opencv-python (image processing disabled)
 
 echo.
 echo Testing basic functionality...
-%PYTHON_CMD% -c "import keyboard, pynput, mss, numpy, PIL, requests, win32api; print('✓ All essential modules working')" 2>nul
+python -c "
+import sys
+try:
+    import keyboard, pynput, mss, numpy, PIL, requests, win32api, pystray
+    print('✓ All essential modules working')
+    sys.exit(0)
+except ImportError as e:
+    print(f'✗ Missing module: {e}')
+    sys.exit(1)
+" 2>nul
 if errorlevel 1 (
     echo.
     echo WARNING: Some essential modules are missing
@@ -166,7 +184,7 @@ echo   ✓ Text recognition for drops (OCR)
 echo   ✓ Auto zoom control
 echo.
 echo OCR Status:
-%PYTHON_CMD% -c "import cv2, numpy, PIL; print('✓ Basic OCR ready - text detection available!')" 2>nul && %PYTHON_CMD% -c "import transformers; print('✓ Advanced TrOCR ready - enhanced text recognition available!')" 2>nul || echo ⚠️  Basic OCR only (advanced TrOCR not available)
+python -c "import easyocr; print('✓ EasyOCR ready - text recognition available!')" 2>nul || echo ⚠️  EasyOCR not available - using fallback detection (drops detected but text not readable)
 echo.
 echo Press any key to exit...
 pause >nul
