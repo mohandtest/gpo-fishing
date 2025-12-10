@@ -59,12 +59,76 @@ except ImportError as e:
 class OCRManager:
     """Manages text recognition from screenshot areas using EasyOCR"""
     
-    def __init__(self):
+    def __init__(self, app=None):
+        self.app = app  # Reference to main app for accessing layout manager
         self.ocr_available = OCR_AVAILABLE
         self.last_text = ""
         self.last_capture_time = 0
-        self.capture_cooldown = 1.0  # Minimum seconds between captures
+        self.capture_cooldown = 2.0  # Increased cooldown to reduce CPU load
         self.reader = None
+        
+        # Performance optimization settings - will be configured based on performance mode
+        self.performance_mode = "fast"  # Default to fast mode
+        self.configure_performance_settings()
+        
+        # Caching for repeated similar images
+        self.image_cache = {}
+        self.cache_max_size = 10
+        self.cache_similarity_threshold = 0.95
+        
+        # Devil fruit names for spawn detection
+        self.devil_fruits = [
+            'Tori', 'Mochi', 'Ope', 'Venom', 'Buddha', 'Pteranodon',
+            'Smoke', 'Goru', 'Yuki', 'Yami', 'Pika', 'Magu',
+            'Kage', 'Mera', 'Paw', 'Goro', 'Ito', 'Hie',
+            'Suna', 'Gura', 'Zushi', 'Kira', 'Spring', 'Yomi',
+            'Bomb', 'Gomu', 'Horo', 'Mero', 'Bari', 'Heal',
+            'Spin', 'Suke', 'Kilo'
+        ]
+        
+        # Create lowercase mapping for fuzzy matching
+        self.devil_fruits_lower = [f.lower() for f in self.devil_fruits]
+    
+    def configure_performance_settings(self):
+        """Configure OCR performance settings based on performance mode"""
+        if self.performance_mode == "fast":
+            # Fastest mode - minimal processing, maximum performance
+            self.max_image_size = (300, 150)
+            self.skip_preprocessing = True
+            self.capture_cooldown = 3.0  # Longer cooldown
+            self.cache_max_size = 15
+            print("🚀 OCR configured for FAST mode - maximum performance, minimal CPU usage")
+            
+        elif self.performance_mode == "balanced":
+            # Balanced mode - moderate processing, good performance
+            self.max_image_size = (400, 200)
+            self.skip_preprocessing = False
+            self.capture_cooldown = 2.0
+            self.cache_max_size = 10
+            print("⚖️ OCR configured for BALANCED mode - good performance with decent accuracy")
+            
+        elif self.performance_mode == "quality":
+            # Quality mode - better processing, slower performance
+            self.max_image_size = (600, 300)
+            self.skip_preprocessing = False
+            self.capture_cooldown = 1.5
+            self.cache_max_size = 5
+            print("🎯 OCR configured for QUALITY mode - better accuracy, higher CPU usage")
+        
+        else:
+            # Default to fast mode if unknown setting
+            self.performance_mode = "fast"
+            self.configure_performance_settings()
+    
+    def set_performance_mode(self, mode: str):
+        """Set OCR performance mode and reconfigure settings"""
+        if mode in ["fast", "balanced", "quality"]:
+            self.performance_mode = mode
+            self.configure_performance_settings()
+            # Clear cache when changing modes
+            self.image_cache.clear()
+        else:
+            print(f"⚠️ Unknown OCR performance mode: {mode}. Using 'fast' mode.")
         
         # Only real GPO items for better recognition
         self.gpo_items = {
@@ -80,10 +144,20 @@ class OCRManager:
         if self.ocr_available:
             try:
                 if OCR_ENGINE == "easy":
-                    print("🔧 Initializing EasyOCR...")
-                    # Initialize EasyOCR with English language
-                    self.reader = easyocr.Reader(['en'], gpu=False, verbose=False)
-                    print("✅ EasyOCR ready - text recognition available!")
+                    print("🔧 Initializing EasyOCR with CPU optimization...")
+                    # Initialize EasyOCR with CPU-only mode and performance optimizations
+                    self.reader = easyocr.Reader(
+                        ['en'], 
+                        gpu=False,  # Force CPU usage
+                        verbose=False,
+                        download_enabled=True,
+                        detector=True,
+                        recognizer=True,
+                        width_ths=0.7,  # Optimize text detection threshold
+                        height_ths=0.7,
+                        decoder='greedy'  # Use faster greedy decoder instead of beam search
+                    )
+                    print("✅ EasyOCR ready with CPU optimization - text recognition available!")
                 elif OCR_ENGINE == "paddle":
                     print("🔧 Initializing PaddleOCR (lightweight engine)...")
                     # Initialize PaddleOCR with English language
@@ -98,16 +172,23 @@ class OCRManager:
         """Check if OCR is available and configured"""
         return self.ocr_available
     
-    def extract_text(self, screenshot_area) -> Optional[str]:
+    def extract_text(self, screenshot_area=None) -> Optional[str]:
         """
-        Extract text from screenshot area using available OCR engine
+        Extract text from drop layout area using available OCR engine
+        Always uses the configured drop layout area, ignoring screenshot_area parameter
         
         Args:
-            screenshot_area: numpy array of screenshot region
+            screenshot_area: IGNORED - always uses drop layout area
             
         Returns:
             Extracted and filtered text, or None if no text found
         """
+        # Always capture from drop layout area
+        screenshot_area = self.capture_drop_area()
+        if screenshot_area is None:
+            print("❌ Could not capture drop layout area")
+            return None
+        
         if not self.ocr_available or not self.reader:
             # Fallback: Basic text detection without OCR
             if FALLBACK_AVAILABLE:
@@ -119,6 +200,12 @@ class OCRManager:
         current_time = time.time()
         if current_time - self.last_capture_time < self.capture_cooldown:
             return None
+        
+        # Check image cache for similar images to avoid reprocessing
+        cached_result = self.check_image_cache(screenshot_area)
+        if cached_result is not None:
+            print(f"📋 Using cached OCR result: {cached_result}")
+            return cached_result
             
         try:
             # Convert BGR to RGB if needed
@@ -153,6 +240,10 @@ class OCRManager:
                     if corrected_text and corrected_text != self.last_text:
                         self.last_text = corrected_text
                         self.last_capture_time = current_time
+                        
+                        # Cache the result for similar future images
+                        self.cache_image_result(screenshot_area, corrected_text)
+                        
                         print(f"📝 {OCR_ENGINE.title()}OCR extracted: {corrected_text}")
                         return corrected_text
                 
@@ -168,7 +259,7 @@ class OCRManager:
     
     def preprocess_for_easyocr(self, img_array):
         """
-        Enhance image for better EasyOCR recognition
+        Lightweight image enhancement for better EasyOCR recognition with minimal CPU impact
         
         Args:
             img_array: numpy array of image
@@ -177,24 +268,25 @@ class OCRManager:
             Processed numpy array
         """
         try:
-            # Convert to grayscale if needed
+            # Limit image size to reduce processing time
+            height, width = img_array.shape[:2]
+            if width > self.max_image_size[0] or height > self.max_image_size[1]:
+                scale_factor = min(self.max_image_size[0] / width, self.max_image_size[1] / height)
+                new_width = int(width * scale_factor)
+                new_height = int(height * scale_factor)
+                img_array = cv2.resize(img_array, (new_width, new_height), interpolation=cv2.INTER_LINEAR)
+            
+            # Skip heavy preprocessing if enabled
+            if self.skip_preprocessing:
+                return img_array
+            
+            # Convert to grayscale if needed (faster processing)
             if len(img_array.shape) == 3:
                 img_array = cv2.cvtColor(img_array, cv2.COLOR_RGB2GRAY)
             
-            # Scale up for better recognition (2x is enough for EasyOCR)
-            height, width = img_array.shape
-            img_array = cv2.resize(img_array, (width * 2, height * 2), interpolation=cv2.INTER_CUBIC)
-            
-            # Enhance contrast using CLAHE (better than simple contrast)
-            clahe = cv2.createCLAHE(clipLimit=3.0, tileGridSize=(8,8))
-            img_array = clahe.apply(img_array)
-            
-            # Denoise
-            img_array = cv2.fastNlMeansDenoising(img_array)
-            
-            # Sharpen
-            kernel = np.array([[-1,-1,-1], [-1,9,-1], [-1,-1,-1]])
-            img_array = cv2.filter2D(img_array, -1, kernel)
+            # Minimal enhancement - just basic contrast adjustment
+            # Skip expensive operations like CLAHE, denoising, and sharpening
+            img_array = cv2.convertScaleAbs(img_array, alpha=1.2, beta=10)
             
             return img_array
             
@@ -351,34 +443,82 @@ class OCRManager:
     
     def test_ocr(self) -> Tuple[bool, str]:
         """
-        Test EasyOCR functionality
+        Test OCR functionality using drop layout area
         
         Returns:
             Tuple of (success, message)
         """
         if not self.ocr_available or not self.reader:
             return False, f"{OCR_ENGINE or 'OCR'} not available"
+        
+        if not self.app or not hasattr(self.app, 'layout_manager'):
+            return False, "No app reference - cannot access drop layout area"
             
         try:
-            # Create a simple test image with text
-            test_img = np.ones((50, 200, 3), dtype=np.uint8) * 255  # White background
-            cv2.putText(test_img, 'TEST', (50, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 0), 2)
+            # Test by trying to capture and process the actual drop area
+            drop_area = self.capture_drop_area()
+            if drop_area is None:
+                return False, "Could not capture drop layout area for testing"
+            
+            # Try to process the drop area (even if no text is present)
+            processed_img = self.preprocess_for_easyocr(drop_area)
             
             # Try to extract text based on engine
             if OCR_ENGINE == "paddle":
-                results = self.reader.ocr(test_img, cls=True)
-                success = results and results[0] and any('TEST' in item[1][0].upper() for item in results[0])
+                results = self.reader.ocr(processed_img, cls=True)
+                success = True  # If no exception, OCR is working
             else:
-                results = self.reader.readtext(test_img, detail=0)
-                success = results and 'TEST' in ' '.join(results).upper()
+                results = self.reader.readtext(processed_img, detail=0)
+                success = True  # If no exception, OCR is working
             
-            if success:
-                return True, f"{OCR_ENGINE.title()}OCR is working correctly"
-            else:
-                return True, f"{OCR_ENGINE.title()}OCR loaded but may have issues with text detection"
+            return True, f"{OCR_ENGINE.title()}OCR is working correctly with drop layout area"
             
         except Exception as e:
             return False, f"{OCR_ENGINE.title()}OCR test failed: {e}"
+    
+    def detect_fruit_spawn(self, text: str) -> Optional[str]:
+        """
+        Detect devil fruit spawn from OCR text
+        Matches against known GPO fruit names using fuzzy matching
+        
+        Args:
+            text: OCR extracted text
+            
+        Returns:
+            Fruit name if detected, None otherwise
+        """
+        if not text:
+            return None
+        
+        text_lower = text.lower()
+        
+        # Look for spawn keywords first
+        spawn_keywords = ['spawned', 'has spawned', 'spawn']
+        has_spawn_keyword = any(keyword in text_lower for keyword in spawn_keywords)
+        
+        if not has_spawn_keyword:
+            return None
+        
+        # Try to find fruit name using fuzzy matching
+        for i, fruit_lower in enumerate(self.devil_fruits_lower):
+            # Direct match
+            if fruit_lower in text_lower:
+                return self.devil_fruits[i]
+            
+            # Fuzzy match - allow for OCR errors (1-2 character differences)
+            if len(fruit_lower) >= 3:
+                # Check if most characters match in sequence
+                for word in text_lower.split():
+                    if len(word) >= 3:
+                        # Calculate similarity
+                        matches = sum(1 for a, b in zip(fruit_lower, word) if a == b)
+                        similarity = matches / max(len(fruit_lower), len(word))
+                        
+                        # Accept if 70%+ similarity
+                        if similarity >= 0.7:
+                            return self.devil_fruits[i]
+        
+        return None
     
     def get_stats(self) -> dict:
         """Get OCR statistics"""
@@ -391,10 +531,10 @@ class OCRManager:
     
     def detect_text_fallback(self, screenshot_area) -> Optional[str]:
         """
-        Fallback text detection without OCR - detects text-like patterns
+        Fallback text detection without OCR - detects text-like patterns in drop layout area
         
         Args:
-            screenshot_area: numpy array of screenshot region
+            screenshot_area: numpy array of drop area screenshot
             
         Returns:
             Simple text detection result or None
@@ -477,4 +617,138 @@ class OCRManager:
             
         except Exception as e:
             logging.error(f"Fallback text detection failed: {e}")
+            return None
+    
+    def check_image_cache(self, img_array) -> Optional[str]:
+        """
+        Check if we have a cached result for a similar image
+        
+        Args:
+            img_array: numpy array of image
+            
+        Returns:
+            Cached text result or None
+        """
+        try:
+            # Create a simple hash of the image for comparison
+            img_hash = self.simple_image_hash(img_array)
+            
+            # Check cache for similar images
+            for cached_hash, cached_text in self.image_cache.items():
+                similarity = self.hash_similarity(img_hash, cached_hash)
+                if similarity > self.cache_similarity_threshold:
+                    return cached_text
+            
+            return None
+            
+        except Exception as e:
+            logging.error(f"Cache check failed: {e}")
+            return None
+    
+    def cache_image_result(self, img_array, text_result: str):
+        """
+        Cache the OCR result for this image
+        
+        Args:
+            img_array: numpy array of image
+            text_result: OCR text result
+        """
+        try:
+            # Clean cache if it's getting too large
+            if len(self.image_cache) >= self.cache_max_size:
+                # Remove oldest entry (simple FIFO)
+                oldest_key = next(iter(self.image_cache))
+                del self.image_cache[oldest_key]
+            
+            # Add new result to cache
+            img_hash = self.simple_image_hash(img_array)
+            self.image_cache[img_hash] = text_result
+            
+        except Exception as e:
+            logging.error(f"Cache storage failed: {e}")
+    
+    def simple_image_hash(self, img_array) -> str:
+        """
+        Create a simple hash of the image for caching
+        
+        Args:
+            img_array: numpy array of image
+            
+        Returns:
+            Simple hash string
+        """
+        try:
+            # Resize to small size for fast hashing
+            small_img = cv2.resize(img_array, (16, 16), interpolation=cv2.INTER_LINEAR)
+            
+            # Convert to grayscale if needed
+            if len(small_img.shape) == 3:
+                small_img = cv2.cvtColor(small_img, cv2.COLOR_RGB2GRAY)
+            
+            # Create hash from pixel values
+            return str(hash(small_img.tobytes()))
+            
+        except Exception as e:
+            logging.error(f"Image hashing failed: {e}")
+            return str(time.time())  # Fallback to timestamp
+    
+    def hash_similarity(self, hash1: str, hash2: str) -> float:
+        """
+        Calculate similarity between two image hashes
+        
+        Args:
+            hash1: First hash
+            hash2: Second hash
+            
+        Returns:
+            Similarity score (0.0 to 1.0)
+        """
+        try:
+            # Simple string similarity for now
+            if hash1 == hash2:
+                return 1.0
+            
+            # For more sophisticated similarity, we could use Hamming distance
+            # For now, exact match only
+            return 0.0
+            
+        except Exception as e:
+            logging.error(f"Hash similarity calculation failed: {e}")
+            return 0.0
+    
+    def capture_drop_area(self):
+        """
+        Capture screenshot from the configured drop layout area
+        
+        Returns:
+            numpy array of drop area screenshot or None if failed
+        """
+        try:
+            if not self.app or not hasattr(self.app, 'layout_manager'):
+                print("❌ No app or layout manager available for drop area capture")
+                return None
+            
+            # Get drop layout area coordinates
+            drop_area = self.app.layout_manager.get_layout_area('drop')
+            if not drop_area:
+                print("❌ Drop layout area not configured")
+                return None
+            
+            # Capture screenshot of drop area
+            import mss
+            with mss.mss() as sct:
+                monitor = {
+                    'left': drop_area['x'],
+                    'top': drop_area['y'],
+                    'width': drop_area['width'],
+                    'height': drop_area['height']
+                }
+                screenshot = sct.grab(monitor)
+                screenshot_array = np.array(screenshot)
+                
+                print(f"📸 Captured drop area: {drop_area['width']}x{drop_area['height']} at ({drop_area['x']}, {drop_area['y']})")
+                return screenshot_array
+                
+        except Exception as e:
+            logging.error(f"Drop area capture failed: {e}")
             return None

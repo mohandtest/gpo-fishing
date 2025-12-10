@@ -23,46 +23,45 @@ The original closed-source macro is sketchy and often flagged by antivirus softw
 
 - **🎣 Fishing System** - Automatic fish detection and tracking with PD controller
 - **🍎 Devil Fruit Detection** - OCR-powered detection of devil fruit drops with keyword matching
+- **🌟 Fruit Spawn Alerts** - Detects and webhooks when devil fruits spawn with exact fruit name recognition
 - **📦 Auto Fruit Storage** - Automatically stores devil fruits in inventory when detected
-- **🔔 Discord Webhook Alerts** - Real-time notifications for legendary devil fruit drops
-- **🛒 Auto-Purchase System** - Configurable bait purchasing with customizable intervals
-- **🎯 Auto Setup & Zoom Control** - Intelligent zoom management and layout switching
-- **🖥️ Modern UI** - Clean, professional interface with collapsible sections
+- **🔔 Discord Webhook Alerts** - Notifications for devil fruit catches and world spawns
+- **🛒 Auto-Purchase** - Configurable bait purchasing
+- **🎯 Auto Setup** - Zoom control and layout switching
+- **🖥️ Modern UI** - Clean interface with collapsible sections
 - **⚡ One-click installation** with `install.bat`
-- **🔇 Silent mode** for long grinding sessions
-- **📊 Smart logging system** with performance optimization
-- **⌨️ Global hotkey support** (F1/F2/F3/F4) - works without admin privileges
+- **📊 Logging** - Dev mode for debugging
+- **⌨️ Global hotkey support** (F1/F2/F3/F4)
 
 ## 🚀 Key Features
 
-### 🍎 Devil Fruit Intelligence
+### 🍎 Devil Fruit Detection
 
-- **OCR Detection**: Automatically detects devil fruit drops using text recognition
-- **Smart Keywords**: Recognizes phrases like "devil fruit", "check backpack", "fished up a devil"
-- **Auto Storage**: Only runs storage sequence when fruits are actually caught
-- **Webhook Alerts**: Discord notifications for legendary devil fruit drops with pity counters
-- **Recovery System**: Prevents macro issues when no fruit is detected
+- **OCR Detection**: Detects devil fruit drops using text recognition
+- **Spawn Detection**: Detects when devil fruits spawn in the world (all 33 GPO fruits)
+- **Fuzzy Matching**: Handles OCR errors with 70% similarity threshold
+- **Auto Storage**: Automatically stores caught fruits
+- **Webhook Alerts**: Discord notifications for catches and spawns
 
-### 🎯 Auto Setup System
+### 🎯 Auto Setup
 
-- **Smart Zoom Control**: Automatically zooms out/in for optimal fishing view
-- **Layout Management**: Auto-switches between fishing bar and drop detection layouts
-- **Mouse Positioning**: Moves to optimal casting position (center-top screen)
-- **Menu Clearing**: Right-clicks to clear menus before casting
+- **Zoom Control**: Automatically zooms out/in for fishing
+- **Layout Switching**: Switches between fishing bar and drop detection
+- **Mouse Positioning**: Moves to casting position
+- **Menu Clearing**: Right-clicks to clear menus
 
-### 🛒 Enhanced Auto-Purchase
+### 🛒 Auto-Purchase
 
 - **Configurable Intervals**: Buy bait every X fish caught
-- **Point-based System**: Set 4 custom points for purchase sequence
-- **Smart Recovery**: Handles purchase failures gracefully
-- **Auto-save Settings**: All configurations persist between sessions
+- **Point System**: Set 4 custom points for purchase sequence
+- **Auto-save**: Settings persist between sessions
 
-### ⚡ Performance Features
+### ⚡ Performance
 
-- **Silent Mode**: Use `run_silent.bat` for long grinding sessions (9+ hours)
-- **Smart Logging**: Toggle verbose output, level-based system
-- **Memory Optimization**: Reduced console spam and efficient logging
-- **Clean Interface**: Modern UI without performance impact
+- **Silent Mode**: Use `run.bat` for background operation
+- **Dev Mode**: Use `run_dev.bat` for debugging with console output
+- **Logging**: Level-based logging system
+- **Modern UI**: Clean interface
 
 ## Installation
 
@@ -88,8 +87,8 @@ The original closed-source macro is sketchy and often flagged by antivirus softw
    - Install all required packages automatically
    - Set everything up for you
 4. **Run the application:**
-   - **With console:** Double-click `run.bat`
-   - **Silent mode:** Double-click `run_silent.bat` (completely hidden)
+   - **Standard mode:** Double-click `run.bat` (silent, no console)
+   - **Dev mode:** Double-click `run_dev.bat` (with console for debugging)
 
 ### 🔧 Manual Installation
 
@@ -114,7 +113,7 @@ The original closed-source macro is sketchy and often flagged by antivirus softw
 ### First Time Setup
 
 1. **Install**: Run `install.bat` to set everything up automatically
-2. **Launch**: Use `run.bat` (with console) or `run_silent.bat` (hidden)
+2. **Launch**: Use `run.bat` (silent mode) or `run_dev.bat` (with console for debugging)
 3. **Configure Layouts**: Position overlays over fishing bar and drop detection areas
 4. **Set Points**: Configure fruit storage points and auto-purchase coordinates
 5. **Enable Features**: Turn on devil fruit storage, webhooks, and auto-purchase as needed
@@ -131,8 +130,12 @@ The original closed-source macro is sketchy and often flagged by antivirus softw
 
 1. **Create Webhook**: In your Discord server → Channel Settings → Integrations → Webhooks
 2. **Copy URL**: Paste the webhook URL in the bot settings
-3. **Configure Alerts**: Enable devil fruit alerts for legendary drop notifications
-4. **Set Interval**: Choose how often to send progress updates
+3. **Configure Alerts**:
+   - 🍎 Devil Fruit Catch Alerts - Notifications when you catch a fruit while fishing
+   - 🌟 Devil Fruit Spawn Alerts - Notifications when fruits spawn in the world (with exact fruit name)
+   - 🐟 Fish Progress Updates - Regular progress reports
+   - 🛒 Auto Purchase Alerts - Bait purchase confirmations
+4. **Set Interval**: Choose how often to send fish progress updates
 
 ### Hotkeys
 
@@ -144,10 +147,11 @@ The original closed-source macro is sketchy and often flagged by antivirus softw
 
 ### Performance Tips
 
-- **Long Sessions**: Use `run_silent.bat` for 9+ hour sessions
-- **Reduce Logging**: Disable verbose logging for better performance
-- **Webhook Monitoring**: Use Discord alerts instead of watching console
+- **Long Sessions**: Use `run.bat` for extended fishing sessions (runs silently in background)
+- **Debugging**: Use `run_dev.bat` when you need to see console output or troubleshoot issues
+- **Webhook Monitoring**: Use Discord alerts for fruit spawns and catches instead of watching console
 - **OCR Optimization**: Ensure good lighting and clear text for better fruit detection
+- **Spawn Detection**: The bot detects all 33 GPO devil fruits automatically using fuzzy matching
 
 ---
 
@@ -166,8 +170,9 @@ The original closed-source macro is sketchy and often flagged by antivirus softw
 - **Hotkeys not working**: Try running with administrator privileges
 - **Fish detection failing**: Adjust overlay position over the blue fishing bar
 - **Devil fruit not detected**: Check OCR setup and drop area positioning
+- **Fruit spawns not detected**: Ensure drop layout covers the spawn message area
 - **Auto-purchase failing**: Verify all 4 purchase points are set correctly
-- **High CPU usage**: Use silent mode and disable verbose logging
+- **High CPU usage**: Use `run.bat` for silent mode operation
 
 ### Devil Fruit Issues
 
@@ -178,10 +183,11 @@ The original closed-source macro is sketchy and often flagged by antivirus softw
 
 ### Performance Issues
 
-- **Long sessions lagging**: Use `run_silent.bat` for better performance
-- **Console spam**: Disable "Verbose Console Logging" in settings
-- **Memory usage**: Silent mode automatically reduces memory footprint
-- **OCR slow**: Ensure Tesseract is properly installed for faster text recognition
+- **Long sessions lagging**: Use `run.bat` for silent background operation
+- **Need console output**: Use `run_dev.bat` for debugging mode with full logging
+- **Memory usage**: Standard mode (`run.bat`) automatically reduces memory footprint
+- **OCR slow**: Install EasyOCR properly for faster text recognition
+- **Spawn detection**: Works automatically for all 33 GPO fruits with fuzzy name matching
 
 ---
 

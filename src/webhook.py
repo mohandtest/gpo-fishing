@@ -8,6 +8,10 @@ class WebhookManager:
     def send_fishing_progress(self):
         if not self.app.webhook_url or not self.app.webhook_enabled:
             return
+        
+        # Check if fish progress notifications are enabled
+        if not getattr(self.app, 'fish_progress_webhook_enabled', True):
+            return
             
         try:
             import requests
@@ -35,9 +39,48 @@ class WebhookManager:
         except Exception as e:
             print(f"❌ Webhook error: {e}")
 
+    def send_fruit_spawn(self, fruit_name):
+        """Send webhook notification for devil fruit spawns"""
+        if not self.app.webhook_url or not self.app.webhook_enabled:
+            return
+        
+        # Check if spawn notifications are enabled
+        if not getattr(self.app, 'fruit_spawn_webhook_enabled', True):
+            return
+            
+        try:
+            import requests
+            
+            embed = {
+                "title": "🌟 Devil Fruit Spawned!",
+                "description": f"A **{fruit_name}** devil fruit has spawned in the world!",
+                "color": 0xFFD700,  # Gold color for spawn
+                "fields": [
+                    {"name": "🍎 Fruit", "value": fruit_name, "inline": True},
+                    {"name": "⏰ Time", "value": datetime.now().strftime("%H:%M:%S"), "inline": True}
+                ],
+                "footer": {"text": "GPO Autofish - Fruit Spawn Alert"},
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+            payload = {"embeds": [embed], "username": "GPO Autofish Bot"}
+            response = requests.post(self.app.webhook_url, json=payload, timeout=10)
+            
+            if response.status_code == 204:
+                print(f"🌟 Fruit spawn webhook sent: {fruit_name}")
+            else:
+                print(f"❌ Fruit spawn webhook failed: {response.status_code}")
+                
+        except Exception as e:
+            print(f"❌ Fruit spawn webhook error: {e}")
+    
     def send_devil_fruit_drop(self, drop_info=None):
         """Send webhook notification for devil fruit drops"""
         if not self.app.webhook_url or not self.app.webhook_enabled:
+            return
+        
+        # Check if devil fruit notifications are enabled
+        if not getattr(self.app, 'devil_fruit_webhook_enabled', True):
             return
             
         # Increment devil fruit counter
@@ -90,6 +133,10 @@ class WebhookManager:
     def send_purchase(self, amount):
         if not self.app.webhook_url or not self.app.webhook_enabled:
             return
+        
+        # Check if purchase notifications are enabled
+        if not getattr(self.app, 'purchase_webhook_enabled', True):
+            return
             
         try:
             import requests
@@ -118,8 +165,90 @@ class WebhookManager:
         except Exception as e:
             print(f"❌ Purchase webhook error: {e}")
     
+    def send_bait_depleted(self, bait_type, remaining_quantities):
+        """Send webhook notification when bait runs out"""
+        if not self.app.webhook_url or not self.app.webhook_enabled:
+            return
+        
+        # Check if bait notifications are enabled
+        if not getattr(self.app, 'bait_webhook_enabled', True):
+            return
+            
+        try:
+            import requests
+            
+            # Create quantities display
+            qty_display = []
+            for bait, qty in remaining_quantities.items():
+                qty_display.append(f"{bait.title()}: {qty}")
+            
+            embed = {
+                "title": "🎣 Bait Depleted!",
+                "description": f"**{bait_type.title()}** bait has run out!",
+                "color": 0xff6b35,  # Orange-red color for warning
+                "fields": [
+                    {"name": "🚨 Depleted Bait", "value": bait_type.title(), "inline": True},
+                    {"name": "📊 Remaining Bait", "value": "\n".join(qty_display), "inline": True},
+                    {"name": "🐟 Fish Caught", "value": str(self.app.fish_count), "inline": True}
+                ],
+                "footer": {"text": "GPO Autofish - Bait Management"},
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+            payload = {"embeds": [embed], "username": "GPO Autofish Bot"}
+            response = requests.post(self.app.webhook_url, json=payload, timeout=10)
+            
+            if response.status_code == 204:
+                print(f"🎣 Bait depletion webhook sent: {bait_type} bait depleted!")
+            else:
+                print(f"❌ Bait depletion webhook failed: {response.status_code}")
+                
+        except Exception as e:
+            print(f"❌ Bait depletion webhook error: {e}")
+    
+    def send_auto_purchase_triggered(self, reason, purchase_amount):
+        """Send webhook notification when auto purchase is triggered by bait system"""
+        if not self.app.webhook_url or not self.app.webhook_enabled:
+            return
+        
+        # Check if bait notifications are enabled
+        if not getattr(self.app, 'bait_webhook_enabled', True):
+            return
+            
+        try:
+            import requests
+            
+            embed = {
+                "title": "🛒 Auto Purchase Triggered",
+                "description": f"Auto purchase activated: {reason}",
+                "color": 0x4caf50,  # Green color for action
+                "fields": [
+                    {"name": "🎯 Trigger Reason", "value": reason, "inline": True},
+                    {"name": "🛒 Purchase Amount", "value": str(purchase_amount), "inline": True},
+                    {"name": "🐟 Fish Caught", "value": str(self.app.fish_count), "inline": True},
+                    {"name": "📈 Status", "value": "Purchasing common bait automatically", "inline": False}
+                ],
+                "footer": {"text": "GPO Autofish - Auto Purchase System"},
+                "timestamp": datetime.utcnow().isoformat()
+            }
+            
+            payload = {"embeds": [embed], "username": "GPO Autofish Bot"}
+            response = requests.post(self.app.webhook_url, json=payload, timeout=10)
+            
+            if response.status_code == 204:
+                print(f"🛒 Auto purchase trigger webhook sent: {reason}")
+            else:
+                print(f"❌ Auto purchase trigger webhook failed: {response.status_code}")
+                
+        except Exception as e:
+            print(f"❌ Auto purchase trigger webhook error: {e}")
+
     def send_recovery(self, recovery_info):
         if not self.app.webhook_url or not self.app.webhook_enabled:
+            return
+        
+        # Check if recovery notifications are enabled
+        if not getattr(self.app, 'recovery_webhook_enabled', True):
             return
             
         try:

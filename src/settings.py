@@ -54,6 +54,7 @@ class SettingsManager:
             'point_coords': getattr(self.app, 'point_coords', {}),
             'fruit_coords': getattr(self.app, 'fruit_coords', {}),
             'fishing_location': getattr(self.app, 'fishing_location', None),
+            'top_bait_coords': getattr(self.app, 'top_bait_coords', None),
             
             # Fruit storage settings
             'fruit_storage_enabled': fruit_storage_enabled,
@@ -73,6 +74,12 @@ class SettingsManager:
             'webhook_url': getattr(self.app.webhook_url_var, 'get', lambda: getattr(self.app, 'webhook_url', ''))() if hasattr(self.app, 'webhook_url_var') else getattr(self.app, 'webhook_url', ''),
             'webhook_enabled': webhook_enabled,
             'webhook_interval': getattr(self.app.webhook_interval_var, 'get', lambda: getattr(self.app, 'webhook_interval', 10))() if hasattr(self.app, 'webhook_interval_var') else getattr(self.app, 'webhook_interval', 10),
+            
+            # Granular webhook notification toggles
+            'fish_progress_webhook_enabled': getattr(self.app, 'fish_progress_webhook_enabled', True),
+            'devil_fruit_webhook_enabled': getattr(self.app, 'devil_fruit_webhook_enabled', True),
+            'purchase_webhook_enabled': getattr(self.app, 'purchase_webhook_enabled', True),
+            'recovery_webhook_enabled': getattr(self.app, 'recovery_webhook_enabled', True),
             
             # Theme settings
             'dark_theme': getattr(self.app, 'dark_theme', True),
@@ -127,6 +134,9 @@ class SettingsManager:
             # Fishing location
             self.app.fishing_location = preset_data.get('fishing_location', None)
             
+            # Top bait coordinates
+            self.app.top_bait_coords = preset_data.get('top_bait_coords', None)
+            
             # Fruit storage settings
             self.app.fruit_storage_enabled = preset_data.get('fruit_storage_enabled', True)
             self.app.fruit_storage_key = preset_data.get('fruit_storage_key', '2')
@@ -145,6 +155,12 @@ class SettingsManager:
             self.app.webhook_url = preset_data.get('webhook_url', '')
             self.app.webhook_enabled = preset_data.get('webhook_enabled', False)
             self.app.webhook_interval = preset_data.get('webhook_interval', 10)
+            
+            # Granular webhook notification toggles
+            self.app.fish_progress_webhook_enabled = preset_data.get('fish_progress_webhook_enabled', True)
+            self.app.devil_fruit_webhook_enabled = preset_data.get('devil_fruit_webhook_enabled', True)
+            self.app.purchase_webhook_enabled = preset_data.get('purchase_webhook_enabled', True)
+            self.app.recovery_webhook_enabled = preset_data.get('recovery_webhook_enabled', True)
             
             # Theme settings
             self.app.auto_update_enabled = preset_data.get('auto_update_enabled', False)
@@ -201,6 +217,16 @@ class SettingsManager:
                 self.app.webhook_url_var.set(self.app.webhook_url)
             if hasattr(self.app, 'webhook_interval_var'):
                 self.app.webhook_interval_var.set(self.app.webhook_interval)
+            
+            # Update granular webhook notification toggle variables
+            if hasattr(self.app, 'fish_progress_webhook_var'):
+                self.app.fish_progress_webhook_var.set(self.app.fish_progress_webhook_enabled)
+            if hasattr(self.app, 'devil_fruit_webhook_var'):
+                self.app.devil_fruit_webhook_var.set(self.app.devil_fruit_webhook_enabled)
+            if hasattr(self.app, 'purchase_webhook_var'):
+                self.app.purchase_webhook_var.set(self.app.purchase_webhook_enabled)
+            if hasattr(self.app, 'recovery_webhook_var'):
+                self.app.recovery_webhook_var.set(self.app.recovery_webhook_enabled)
                 
             # Update PD controller variables
             if hasattr(self.app, 'kp_var'):

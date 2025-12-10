@@ -167,7 +167,18 @@ class HotkeyGUI:
         self.webhook_enabled = False
         self.webhook_interval = 10  # Send webhook every X loops
         self.webhook_counter = 0  # Track loops for webhook
-
+        
+        # Granular webhook notification toggles
+        self.fish_progress_webhook_enabled = True
+        self.devil_fruit_webhook_enabled = True
+        self.fruit_spawn_webhook_enabled = True
+        self.purchase_webhook_enabled = True
+        self.recovery_webhook_enabled = True
+        self.bait_webhook_enabled = True
+        
+        # Auto bait settings (simplified)
+        self.auto_bait_enabled = False
+        self.top_bait_coords = None
         
         # Fruit storage settings
         self.fruit_storage_enabled = False
@@ -255,7 +266,12 @@ class HotkeyGUI:
             from src.ocr_manager import OCRManager
         except ImportError:
             from ocr_manager import OCRManager
-        self.ocr_manager = OCRManager()
+        self.ocr_manager = OCRManager(self)  # Pass app reference
+        
+        # Configure OCR performance mode (default to fast for better performance)
+        self.ocr_performance_mode = "fast"
+        if hasattr(self.ocr_manager, 'set_performance_mode'):
+            self.ocr_manager.set_performance_mode(self.ocr_performance_mode)
         
         # Initialize zoom controller
         try:
@@ -263,6 +279,13 @@ class HotkeyGUI:
         except ImportError:
             from zoom_controller import ZoomController
         self.zoom_controller = ZoomController(self)
+        
+        # Initialize bait manager
+        try:
+            from src.bait_manager import BaitManager
+        except ImportError:
+            from bait_manager import BaitManager
+        self.bait_manager = BaitManager(self)
         
         # Initialize fishing bot
         self.fishing_bot = FishingBot(self)
@@ -283,11 +306,16 @@ class HotkeyGUI:
         self.apply_theme()
         self.register_hotkeys()
         
-        # Set compact window size with modern scrolling
-        self.root.geometry('420x650')  # Increased height from 550 to 650
+        # Set window size (use saved size if available)
+        window_width = getattr(self, 'window_width', 420)
+        window_height = getattr(self, 'window_height', 650)
+        self.root.geometry(f'{window_width}x{window_height}')
         self.root.resizable(True, True)
         self.root.update_idletasks()
-        self.root.minsize(400, 500)  # Increased minimum height from 450 to 500
+        self.root.minsize(400, 500)  # Minimum size constraints
+        
+        # Bind window resize event to save size
+        self.root.bind('<Configure>', self.on_window_resize)
         
 
         
@@ -439,9 +467,11 @@ class HotkeyGUI:
         self.fish_counter_label = ttk.Label(status_frame, text='Fish: 0', style='Counter.TLabel')
         self.fish_counter_label.grid(row=0, column=2, padx=10, pady=8)
         
-        # Second row - Runtime only
+        # Second row - Runtime and Bait Status
         self.runtime_label = ttk.Label(status_frame, text='⏱️ Runtime: 00:00:00', style='Counter.TLabel')
-        self.runtime_label.grid(row=1, column=0, columnspan=3, padx=10, pady=8)
+        self.runtime_label.grid(row=1, column=0, columnspan=2, padx=10, pady=8)
+        
+
         
         current_row += 1
         
@@ -455,8 +485,15 @@ class HotkeyGUI:
         self.create_startup_section(current_row)
         current_row += 1
         
-        # 2. Fruit Storage - Core functionality
+        # 2. Auto Bait - Smart bait management
+        self.create_auto_bait_section(current_row)
+        current_row += 1
+        
+        # 3. Fruit Storage - Core functionality
         self.create_fruit_storage_section(current_row)
+        current_row += 1
+        
+
         current_row += 1
         
         # 3. Auto Purchase - Core functionality
@@ -682,6 +719,46 @@ class HotkeyGUI:
             except Exception:
                 return None
 
+    def set_bait_point(self, bait_type):
+        """Set bait coordinate points"""
+        if bait_type == 'top_bait':
+            # Simplified approach - just store the top bait position
+            if not hasattr(self, 'top_bait_coords'):
+                self.top_bait_coords = None
+            
+            try:
+                self.status_msg.config(text='Click to set top bait position...', foreground='blue')
+                
+                def _on_click(x, y, button, pressed):
+                    if pressed:
+                        self.top_bait_coords = (x, y)
+                        print(f"✅ Top bait position set at ({x}, {y})")
+                        
+                        # Update button text
+                        try:
+                            self.root.after(0, lambda: self.top_bait_button.config(text=f'Top Bait: ({x}, {y})'))
+                            self.root.after(0, lambda: self.status_msg.config(text=f'Top bait position set: ({x}, {y})', foreground='green'))
+                        except Exception:
+                            pass
+                        
+                        # Auto-save settings
+                        try:
+                            self.root.after(0, lambda: self.auto_save_settings())
+                        except Exception:
+                            pass
+                        
+                        return False  # Stop listener
+                
+                listener = pynput_mouse.Listener(on_click=_on_click)
+                listener.start()
+            except Exception as e:
+                try:
+                    self.status_msg.config(text=f'Error setting bait point: {e}', foreground='red')
+                except Exception:
+                    pass
+
+
+
     def _click_at(self, coords):
         """Move cursor to coords and perform a left click."""  # inserted
         try:
@@ -821,7 +898,10 @@ Sequence (per user spec):
         
         # Send webhook notification for auto purchase
         self.webhook_manager.send_purchase(amount)
+        
         print()
+    
+
 
     def start_rebind(self, action):
         """Start recording a new hotkey"""  # inserted
@@ -988,6 +1068,9 @@ Sequence (per user spec):
         # Update UI
         self.loop_status.config(text='● Main Loop: ACTIVE', style='StatusOn.TLabel')
         
+        # Update bait status display
+        self.update_bait_status_display()
+        
         # Start the loop directly (no smart detection needed for fresh start)
         self.main_loop_thread = threading.Thread(target=lambda: self.fishing_bot.run_main_loop(skip_initial_setup=False), daemon=True)
         self.main_loop_thread.start()
@@ -1091,6 +1174,9 @@ Sequence (per user spec):
             pass
         self.log(f'🐟 Fish caught: {self.fish_count}', "important")
         
+        # Update bait status display
+        self.update_bait_status_display()
+        
         # Check if we should send webhook
         if self.webhook_enabled and self.webhook_counter >= self.webhook_interval:
             self.webhook_manager.send_fishing_progress()
@@ -1104,6 +1190,15 @@ Sequence (per user spec):
             self.root.after(0, lambda: self.fish_counter_label.config(text=f'🐟 Fish: {self.fish_count}'))
         except Exception:
             pass
+    
+
+
+
+
+    def update_bait_status_display(self):
+        """Update bait status display"""
+        # Bait status display has been removed from GUI
+        pass
 
     def check_and_purchase(self):
         """Check if we need to auto-purchase and run sequence if needed"""  # inserted
@@ -1119,7 +1214,7 @@ Sequence (per user spec):
                     print(f'❌ AUTO-PURCHASE ERROR: {e}')
 
     def cast_line(self):
-        """Perform the casting action: hold click for 1 second then release"""  # inserted
+        """Perform the casting action: hold click for 1 second then release"""
         self.log('Casting line...', "verbose")
         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
         threading.Event().wait(1.0)
@@ -1291,6 +1386,52 @@ Sequence (per user spec):
             ToolTip(help_btn, tooltips[i])
             row += 1
 
+    def create_auto_bait_section(self, start_row):
+        """Create the simplified auto bait section"""
+        section = CollapsibleFrame(self.main_frame, "🎣 Auto Bait Selection", start_row)
+        self.collapsible_sections['auto_bait'] = section
+        frame = section.get_content_frame()
+        
+        # Configure grid weights for proper resizing
+        frame.grid_columnconfigure(1, weight=1)
+        
+        row = 0
+        
+        # Auto bait enabled checkbox
+        ttk.Label(frame, text='Active:').grid(row=row, column=0, sticky='e', pady=5, padx=(0, 10))
+        self.auto_bait_var = tk.BooleanVar(value=getattr(self, 'auto_bait_enabled', False))
+        bait_check = ttk.Checkbutton(frame, variable=self.auto_bait_var, text='Enabled')
+        bait_check.grid(row=row, column=1, pady=5, sticky='w')
+        help_btn = ttk.Button(frame, text='?', width=3)
+        help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
+        ToolTip(help_btn, "Automatically select top bait before every rod throw")
+        self.auto_bait_var.trace_add('write', lambda *args: (setattr(self, 'auto_bait_enabled', self.auto_bait_var.get()), self.auto_save_settings()))
+        row += 1
+        
+        # Top bait location button
+        ttk.Label(frame, text='Top Bait Location:').grid(row=row, column=0, sticky='e', pady=5, padx=(0, 10))
+        self.top_bait_button = ttk.Button(frame, text='Set Top Bait Position', 
+                                        command=lambda: self.set_bait_point('top_bait'))
+        self.top_bait_button.grid(row=row, column=1, pady=5, sticky='w')
+        help_btn = ttk.Button(frame, text='?', width=3)
+        help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
+        ToolTip(help_btn, "Click to set the position of the top bait in the menu")
+        row += 1
+        
+        # Instructions
+        instructions = ttk.Label(frame, text='Instructions:', font=('TkDefaultFont', 9, 'bold'))
+        instructions.grid(row=row, column=0, columnspan=3, pady=(10, 2), sticky='w')
+        row += 1
+        
+        instruction_text = ("1. Set the top bait position (where the best bait appears)\n"
+                          "2. System will click this position before every rod throw\n"
+                          "3. Works with any bait type - always selects top available\n"
+                          "4. Auto purchase continues to work independently")
+        ttk.Label(frame, text=instruction_text, 
+                 font=('TkDefaultFont', 8), foreground='gray').grid(row=row, column=0, columnspan=3, pady=2, sticky='w')
+        
+
+
     def create_fruit_storage_section(self, start_row):
         """Create the fruit storage collapsible section"""
         section = CollapsibleFrame(self.main_frame, "🍎 Fruit Storage Settings", start_row)
@@ -1455,14 +1596,68 @@ Sequence (per user spec):
         self.webhook_interval_var.trace_add('write', lambda *args: (setattr(self, 'webhook_interval', self.webhook_interval_var.get()), self.auto_save_settings()))
         row += 1
         
+        # Notification type toggles section
+        ttk.Label(frame, text='Notification Types:', font=('TkDefaultFont', 9, 'bold')).grid(row=row, column=0, columnspan=3, pady=(10, 5), sticky='w')
+        row += 1
+        
+        # Fish progress notifications
+        self.fish_progress_webhook_var = tk.BooleanVar(value=getattr(self, 'fish_progress_webhook_enabled', True))
+        fish_progress_check = ttk.Checkbutton(frame, text='🐟 Fish Progress Updates', variable=self.fish_progress_webhook_var)
+        fish_progress_check.grid(row=row, column=0, columnspan=2, pady=2, sticky='w')
+        help_btn = ttk.Button(frame, text='?', width=3)
+        help_btn.grid(row=row, column=2, padx=(10, 0), pady=2)
+        ToolTip(help_btn, "Send notifications every X fish caught (based on interval above)")
+        self.fish_progress_webhook_var.trace_add('write', lambda *args: (setattr(self, 'fish_progress_webhook_enabled', self.fish_progress_webhook_var.get()), self.auto_save_settings()))
+        row += 1
+        
         # Devil fruit webhook notifications
         self.devil_fruit_webhook_var = tk.BooleanVar(value=getattr(self, 'devil_fruit_webhook_enabled', True))
-        devil_fruit_check = ttk.Checkbutton(frame, text='🍎 Devil Fruit Alerts', variable=self.devil_fruit_webhook_var)
-        devil_fruit_check.grid(row=row, column=0, columnspan=2, pady=5)
+        devil_fruit_check = ttk.Checkbutton(frame, text='🍎 Devil Fruit Catch Alerts', variable=self.devil_fruit_webhook_var)
+        devil_fruit_check.grid(row=row, column=0, columnspan=2, pady=2, sticky='w')
         help_btn = ttk.Button(frame, text='?', width=3)
-        help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
-        ToolTip(help_btn, "Send Discord notifications when devil fruits are caught")
+        help_btn.grid(row=row, column=2, padx=(10, 0), pady=2)
+        ToolTip(help_btn, "Send Discord notifications when devil fruits are caught while fishing")
         self.devil_fruit_webhook_var.trace_add('write', lambda *args: (setattr(self, 'devil_fruit_webhook_enabled', self.devil_fruit_webhook_var.get()), self.auto_save_settings()))
+        row += 1
+        
+        # Fruit spawn webhook notifications
+        self.fruit_spawn_webhook_var = tk.BooleanVar(value=getattr(self, 'fruit_spawn_webhook_enabled', True))
+        fruit_spawn_check = ttk.Checkbutton(frame, text='🌟 Devil Fruit Spawn Alerts', variable=self.fruit_spawn_webhook_var)
+        fruit_spawn_check.grid(row=row, column=0, columnspan=2, pady=2, sticky='w')
+        help_btn = ttk.Button(frame, text='?', width=3)
+        help_btn.grid(row=row, column=2, padx=(10, 0), pady=2)
+        ToolTip(help_btn, "Send Discord notifications when devil fruits spawn in the world")
+        self.fruit_spawn_webhook_var.trace_add('write', lambda *args: (setattr(self, 'fruit_spawn_webhook_enabled', self.fruit_spawn_webhook_var.get()), self.auto_save_settings()))
+        row += 1
+        
+        # Auto purchase notifications
+        self.purchase_webhook_var = tk.BooleanVar(value=getattr(self, 'purchase_webhook_enabled', True))
+        purchase_check = ttk.Checkbutton(frame, text='🛒 Auto Purchase Alerts', variable=self.purchase_webhook_var)
+        purchase_check.grid(row=row, column=0, columnspan=2, pady=2, sticky='w')
+        help_btn = ttk.Button(frame, text='?', width=3)
+        help_btn.grid(row=row, column=2, padx=(10, 0), pady=2)
+        ToolTip(help_btn, "Send notifications when auto purchase completes")
+        self.purchase_webhook_var.trace_add('write', lambda *args: (setattr(self, 'purchase_webhook_enabled', self.purchase_webhook_var.get()), self.auto_save_settings()))
+        row += 1
+        
+        # Recovery/error notifications
+        self.recovery_webhook_var = tk.BooleanVar(value=getattr(self, 'recovery_webhook_enabled', True))
+        recovery_check = ttk.Checkbutton(frame, text='🔄 Recovery/Error Alerts', variable=self.recovery_webhook_var)
+        recovery_check.grid(row=row, column=0, columnspan=2, pady=2, sticky='w')
+        help_btn = ttk.Button(frame, text='?', width=3)
+        help_btn.grid(row=row, column=2, padx=(10, 0), pady=2)
+        ToolTip(help_btn, "Send notifications when bot recovers from errors or gets stuck")
+        self.recovery_webhook_var.trace_add('write', lambda *args: (setattr(self, 'recovery_webhook_enabled', self.recovery_webhook_var.get()), self.auto_save_settings()))
+        row += 1
+        
+        # Bait management notifications
+        self.bait_webhook_var = tk.BooleanVar(value=getattr(self, 'bait_webhook_enabled', True))
+        bait_check = ttk.Checkbutton(frame, text='🎣 Bait Management Alerts', variable=self.bait_webhook_var)
+        bait_check.grid(row=row, column=0, columnspan=2, pady=2, sticky='w')
+        help_btn = ttk.Button(frame, text='?', width=3)
+        help_btn.grid(row=row, column=2, padx=(10, 0), pady=2)
+        ToolTip(help_btn, "Send notifications when bait runs out and auto purchase is triggered")
+        self.bait_webhook_var.trace_add('write', lambda *args: (setattr(self, 'bait_webhook_enabled', self.bait_webhook_var.get()), self.auto_save_settings()))
         row += 1
         
         # Test webhook button
@@ -2307,6 +2502,37 @@ Sequence (per user spec):
 
 
 
+    def on_window_resize(self, event):
+        """Handle window resize events and save window size"""
+        # Only handle resize events for the main window
+        if event.widget == self.root:
+            try:
+                # Get current window size
+                width = self.root.winfo_width()
+                height = self.root.winfo_height()
+                
+                # Save to settings (debounced to avoid excessive saves)
+                if not hasattr(self, '_resize_after_id'):
+                    self._resize_after_id = None
+                
+                if self._resize_after_id:
+                    self.root.after_cancel(self._resize_after_id)
+                
+                # Save after 500ms of no resize activity
+                self._resize_after_id = self.root.after(500, lambda: self.save_window_size(width, height))
+            except Exception as e:
+                print(f"Error handling window resize: {e}")
+    
+    def save_window_size(self, width, height):
+        """Save window size to settings"""
+        try:
+            self.window_width = width
+            self.window_height = height
+            self.auto_save_settings()
+            self._resize_after_id = None
+        except Exception as e:
+            print(f"Error saving window size: {e}")
+
     def auto_save_settings(self):
         """Auto-save current settings to default.json"""
         if not hasattr(self, 'auto_purchase_var'):
@@ -2330,6 +2556,22 @@ Sequence (per user spec):
             'webhook_url': getattr(self, 'webhook_url', ''),
             'webhook_enabled': getattr(self, 'webhook_enabled', False),
             'webhook_interval': getattr(self, 'webhook_interval', 10),
+            'fish_progress_webhook_enabled': getattr(self, 'fish_progress_webhook_enabled', True),
+            'devil_fruit_webhook_enabled': getattr(self, 'devil_fruit_webhook_enabled', True),
+            'fruit_spawn_webhook_enabled': getattr(self, 'fruit_spawn_webhook_enabled', True),
+            'purchase_webhook_enabled': getattr(self, 'purchase_webhook_enabled', True),
+            'recovery_webhook_enabled': getattr(self, 'recovery_webhook_enabled', True),
+            'bait_webhook_enabled': getattr(self, 'bait_webhook_enabled', True),
+            'ocr_performance_mode': getattr(self, 'ocr_performance_mode', 'fast'),
+            
+            # Auto bait settings (simplified)
+            'auto_bait_enabled': getattr(self, 'auto_bait_enabled', False),
+            'top_bait_coords': getattr(self, 'top_bait_coords', None),
+            
+            # Window size settings
+            'window_width': getattr(self, 'window_width', 420),
+            'window_height': getattr(self, 'window_height', 650),
+
 
             'dark_theme': getattr(self, 'dark_theme', True),
             'current_theme': getattr(self, 'current_theme', 'default'),
@@ -2384,6 +2626,10 @@ Sequence (per user spec):
                 'purchase_click_delay': getattr(self, 'purchase_click_delay', 1.0),
                 'purchase_after_type_delay': getattr(self, 'purchase_after_type_delay', 1.0),
                 
+
+                
+                # Auto bait settings
+                'auto_bait_enabled': getattr(self, 'auto_bait_enabled', False),
 
                 
                 # Recovery settings
@@ -2500,6 +2746,10 @@ Sequence (per user spec):
             
 
             
+            # Load auto bait settings
+            self.auto_bait_enabled = preset_data.get('auto_bait_enabled', False)
+
+            
             # Recovery settings
             self.recovery_enabled = preset_data.get('recovery_enabled', True)
             
@@ -2572,6 +2822,27 @@ Sequence (per user spec):
             self.webhook_url = preset_data.get('webhook_url', '')
             self.webhook_enabled = preset_data.get('webhook_enabled', False)
             self.webhook_interval = preset_data.get('webhook_interval', 10)
+            
+            # Load granular webhook notification toggles
+            self.fish_progress_webhook_enabled = preset_data.get('fish_progress_webhook_enabled', True)
+            self.devil_fruit_webhook_enabled = preset_data.get('devil_fruit_webhook_enabled', True)
+            self.fruit_spawn_webhook_enabled = preset_data.get('fruit_spawn_webhook_enabled', True)
+            self.purchase_webhook_enabled = preset_data.get('purchase_webhook_enabled', True)
+            self.recovery_webhook_enabled = preset_data.get('recovery_webhook_enabled', True)
+            self.bait_webhook_enabled = preset_data.get('bait_webhook_enabled', True)
+            
+            # Load OCR performance mode
+            self.ocr_performance_mode = preset_data.get('ocr_performance_mode', 'fast')
+            if hasattr(self, 'ocr_manager') and hasattr(self.ocr_manager, 'set_performance_mode'):
+                self.ocr_manager.set_performance_mode(self.ocr_performance_mode)
+            
+            # Load auto bait settings (simplified)
+            self.auto_bait_enabled = preset_data.get('auto_bait_enabled', False)
+            self.top_bait_coords = preset_data.get('top_bait_coords', None)
+            
+            # Load window size settings
+            self.window_width = preset_data.get('window_width', 420)
+            self.window_height = preset_data.get('window_height', 650)
 
             self.fruit_storage_enabled = preset_data.get('fruit_storage_enabled', False)
             self.fruit_storage_key = preset_data.get('fruit_storage_key', '3')
@@ -2622,6 +2893,35 @@ Sequence (per user spec):
                 self.webhook_url_var.set(self.webhook_url)
             if hasattr(self, 'webhook_interval_var'):
                 self.webhook_interval_var.set(self.webhook_interval)
+            
+            # Update bait variables
+            if hasattr(self, 'auto_bait_var'):
+                self.auto_bait_var.set(self.auto_bait_enabled)
+
+            
+            # Update granular webhook notification toggle variables
+            if hasattr(self, 'fish_progress_webhook_var'):
+                self.fish_progress_webhook_var.set(self.fish_progress_webhook_enabled)
+            if hasattr(self, 'devil_fruit_webhook_var'):
+                self.devil_fruit_webhook_var.set(self.devil_fruit_webhook_enabled)
+            if hasattr(self, 'fruit_spawn_webhook_var'):
+                self.fruit_spawn_webhook_var.set(self.fruit_spawn_webhook_enabled)
+            if hasattr(self, 'purchase_webhook_var'):
+                self.purchase_webhook_var.set(self.purchase_webhook_enabled)
+            if hasattr(self, 'recovery_webhook_var'):
+                self.recovery_webhook_var.set(self.recovery_webhook_enabled)
+            if hasattr(self, 'bait_webhook_var'):
+                self.bait_webhook_var.set(self.bait_webhook_enabled)
+            
+            # Update auto bait variables (simplified)
+            if hasattr(self, 'auto_bait_var'):
+                self.auto_bait_var.set(self.auto_bait_enabled)
+            
+
+
+            
+            # Update bait button texts
+            self.update_bait_buttons()
 
             
             # Load OCR settings
@@ -2690,6 +2990,26 @@ Sequence (per user spec):
         if hasattr(self, 'fishing_location_button') and hasattr(self, 'fishing_location') and self.fishing_location:
             coords = self.fishing_location
             self.fishing_location_button.config(text=f'🎯 Location: {coords}')
+
+    def update_bait_buttons(self):
+        """Update bait button texts with coordinates"""
+        if hasattr(self, 'bait_coords') and self.bait_coords:
+            button_map = {
+                'legendary': ('legendary_bait_button', 'Legendary'),
+                'rare': ('rare_bait_button', 'Rare'),
+                'common': ('common_bait_button', 'Common')
+            }
+            
+            for bait_type, (button_attr, display_name) in button_map.items():
+                if hasattr(self, button_attr) and bait_type in self.bait_coords and self.bait_coords[bait_type]:
+                    button = getattr(self, button_attr)
+                    coords = self.bait_coords[bait_type]
+                    button.config(text=f'{display_name}: ({coords[0]}, {coords[1]})')
+        
+        # Update top bait button
+        if hasattr(self, 'top_bait_button') and hasattr(self, 'top_bait_coords') and self.top_bait_coords:
+            x, y = self.top_bait_coords
+            self.top_bait_button.config(text=f'Top Bait: ({x}, {y})')
 
     def update_hotkey_labels(self):
         """Update hotkey label texts"""

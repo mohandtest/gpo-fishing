@@ -27,8 +27,8 @@
     ]
   },
   "fishing_location": [
-    709,
-    184
+    937,
+    383
   ],
   "fruit_storage_enabled": true,
   "fruit_storage_key": "2",
@@ -40,7 +40,18 @@
   "smart_check_interval": 15.0,
   "webhook_url": "",
   "webhook_enabled": false,
-  "webhook_interval": 10,
+  "webhook_interval": 11,
+  "fish_progress_webhook_enabled": true,
+  "devil_fruit_webhook_enabled": true,
+  "fruit_spawn_webhook_enabled": true,
+  "purchase_webhook_enabled": true,
+  "recovery_webhook_enabled": true,
+  "bait_webhook_enabled": true,
+  "ocr_performance_mode": "fast",
+  "auto_bait_enabled": true,
+  "top_bait_coords": [],
+  "window_width": 420,
+  "window_height": 756,
   "dark_theme": true,
   "current_theme": "dark",
   "layout_settings": {
@@ -93,5 +104,5 @@
     "sequence_delay": 0.5,
     "zoom_cooldown": 2.0
   },
-  "last_saved": "2025-12-01T16:53:22.927179"
+  "last_saved": "2025-12-10T20:22:08.906252"
 }

@@ -650,7 +650,7 @@ class FishingBot:
                     try:
                         print(f'🎣 Fishing cycle #{self.app.fish_count + 1}')
                         
-                        # Cast line
+                        # Cast line (bait selection already done in initial setup)
                         self.app.set_recovery_state("casting", {"action": "initial_cast"})
                         self.cast_line()
                         cast_time = time.time()
@@ -750,6 +750,10 @@ class FishingBot:
                                 # No blue bar found
                                 if not detected and time.time() - cast_time > self.app.scan_timeout:
                                     print(f'Cast timeout after {self.app.scan_timeout}s, recasting...')
+                                    # Reselect bait in case we ran out (recovery feature)
+                                    if hasattr(self.app, 'bait_manager') and self.app.bait_manager.is_enabled():
+                                        print("🔄 Reselecting bait (may have run out)")
+                                        self.app.bait_manager.select_top_bait()
                                     break
                                 
                                 if was_detecting:
@@ -1005,6 +1009,13 @@ class FishingBot:
             # Add delay after auto purchase to ensure it completes
             time.sleep(1.0)
         
+        # Step 4: Auto bait selection (when rod is in hand)
+        if hasattr(self.app, 'bait_manager') and self.app.bait_manager.is_enabled():
+            print("🎣 Step 4: Selecting initial bait...")
+            self.app.set_recovery_state("initial_setup", {"action": "bait_selection"})
+            self.app.bait_manager.select_bait_before_cast()
+            time.sleep(0.5)
+        
         # Final delay to ensure all setup operations are complete before casting
         self.app.set_recovery_state("initial_setup", {"action": "finalizing"})
         print("⏳ Waiting for setup to stabilize...")
@@ -1119,9 +1130,9 @@ class FishingBot:
                 screenshot = sct.grab(monitor)
                 img = np.array(screenshot)
             
-            # Extract text using OCR
+            # Extract text using OCR from drop layout area
             if hasattr(self.app, 'ocr_manager'):
-                drop_text = self.app.ocr_manager.extract_text(img)
+                drop_text = self.app.ocr_manager.extract_text()  # No screenshot_area needed - uses drop layout
                 if drop_text:
                     drop_info['drop_text'] = drop_text
                     
@@ -1163,6 +1174,14 @@ class FishingBot:
                         if 'devil fruit' in drop_text_lower:
                             drop_info['has_fruit'] = True
                             print(f"🍎 Devil fruit detected!")
+                        
+                        # Check for devil fruit spawn notifications
+                        fruit_name = self.app.ocr_manager.detect_fruit_spawn(drop_text)
+                        if fruit_name:
+                            print(f"🌟 Devil fruit spawn detected: {fruit_name}")
+                            # Send webhook notification
+                            if hasattr(self.app, 'webhook_manager'):
+                                self.app.webhook_manager.send_fruit_spawn(fruit_name)
                         
                         # Display in drop overlay
                         if hasattr(self.app, 'overlay_manager_drop') and self.app.overlay_manager_drop.window:
