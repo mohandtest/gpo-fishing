@@ -665,9 +665,32 @@ class FishingBot:
                         print('Scanning for blue fishing bar...')
                         
                         detection_start_time = time.time()
+                        last_spawn_check = time.time()
+                        spawn_check_interval = 4.0  # Check for spawns every 4 seconds (lightweight)
+                        
                         while self.app.main_loop_active and not self.force_stop_flag:
                             # Update heartbeat frequently during detection
                             self.update_heartbeat()
+                            
+                            # Periodically check for fruit spawns (silent unless detected)
+                            current_time = time.time()
+                            if current_time - last_spawn_check > spawn_check_interval:
+                                try:
+                                    # Check for spawn text using OCR (respects OCR cooldown internally)
+                                    if hasattr(self.app, 'ocr_manager') and self.app.ocr_manager.is_available():
+                                        spawn_text = self.app.ocr_manager.extract_text()
+                                        if spawn_text:
+                                            fruit_name = self.app.ocr_manager.detect_fruit_spawn(spawn_text)
+                                            if fruit_name:
+                                                # Only log when something is detected
+                                                print(f"🌟 Devil fruit spawn detected: {fruit_name}")
+                                                if hasattr(self.app, 'webhook_manager') and getattr(self.app, 'fruit_spawn_webhook_enabled', True):
+                                                    self.app.webhook_manager.send_fruit_spawn(fruit_name)
+                                    
+                                    last_spawn_check = current_time
+                                except Exception as spawn_error:
+                                    # Silent error handling - don't spam console
+                                    pass
                             
                             # Smart adaptive timeout system
                             current_time = time.time()
