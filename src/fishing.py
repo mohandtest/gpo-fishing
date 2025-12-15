@@ -675,11 +675,12 @@ class FishingBot:
                             self.update_heartbeat()
                             
                             # Periodically check for fruit spawns (with smart cooldown)
+                            # ONLY check when NOT actively fishing (detected == False means waiting for bite)
                             current_time = time.time()
                             time_since_last_spawn = current_time - self.last_fruit_spawn_time
                             
-                            # Only check if: enough time passed AND we're outside the 15min cooldown after detection
-                            if current_time - last_spawn_check > spawn_check_interval and time_since_last_spawn > self.fruit_spawn_cooldown:
+                            # Only check if: NOT actively fishing AND enough time passed AND outside cooldown
+                            if not detected and current_time - last_spawn_check > spawn_check_interval and time_since_last_spawn > self.fruit_spawn_cooldown:
                                 try:
                                     # Check for spawn text using OCR
                                     if hasattr(self.app, 'ocr_manager') and self.app.ocr_manager.is_available():
