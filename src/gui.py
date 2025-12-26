@@ -389,6 +389,13 @@ class HotkeyGUI:
         except:
             return 1.0
 
+    def _safe_get_int(self, var, default=0):
+        """Safely get integer value from Tkinter variable, handling empty strings"""
+        try:
+            return var.get()
+        except (tk.TclError, ValueError, AttributeError):
+            return default
+
     def create_widgets(self):
         # Create scrollable main container with more width
         self.create_scrollable_frame()
@@ -605,6 +612,8 @@ class HotkeyGUI:
                 self.status_msg.config(text=f'Click anywhere to set Point {idx}...', foreground='blue')
             elif idx == 'fruit_point':
                 self.status_msg.config(text='Click anywhere to set Fruit Point...', foreground='blue')
+            elif idx == 'fruit_point_2':
+                self.status_msg.config(text='Click anywhere to set Fruit Point 2 (backup)...', foreground='blue')
             elif idx == 'bait_point':
                 self.status_msg.config(text='Click anywhere to set Bait Point...', foreground='blue')
             elif idx == 'fishing_location':
@@ -629,6 +638,17 @@ class HotkeyGUI:
                             # Capture variables properly in lambda
                             self.root.after(0, lambda coords=(x, y): self.fruit_point_button.config(text=f'Fruit Point: {coords}'))
                             self.root.after(0, lambda coords=(x, y): self.status_msg.config(text=f'Fruit Point set: {coords}', foreground='green'))
+                        except Exception:
+                            pass
+                    elif idx == 'fruit_point_2':
+                        # Fruit storage point 2 (backup)
+                        if not hasattr(self, 'fruit_coords'):
+                            self.fruit_coords = {}
+                        self.fruit_coords['fruit_point_2'] = (x, y)
+                        try:
+                            # Capture variables properly in lambda
+                            self.root.after(0, lambda coords=(x, y): self.fruit_point_2_button.config(text=f'Fruit Point 2: {coords}'))
+                            self.root.after(0, lambda coords=(x, y): self.status_msg.config(text=f'Fruit Point 2 set: {coords}', foreground='green'))
                         except Exception:
                             pass
                     elif idx == 'bait_point':
@@ -825,8 +845,10 @@ Sequence (per user spec):
         
         # Press 'e' key with detailed state tracking
         self.set_recovery_state("menu_opening", {"action": "pressing_e_key", "amount": amount})
-        self.log('Pressing E key...', "verbose")
-        keyboard.press_and_release('e')
+        self.log('Holding E key for 3 seconds...', "verbose")
+        keyboard.press('e')
+        threading.Event().wait(3.0)
+        keyboard.release('e')
         threading.Event().wait(self.purchase_delay_after_key)
         
         if not self.main_loop_active:
@@ -1358,8 +1380,16 @@ Sequence (per user spec):
         help_btn = ttk.Button(frame, text='?', width=3)
         help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
         ToolTip(help_btn, "How much bait to buy each time (e.g., 10 = buy 10 bait)")
-        self.amount_var.trace_add('write', lambda *args: setattr(self, 'auto_purchase_amount', self.amount_var.get()))
-        self.auto_purchase_amount = self.amount_var.get()
+        def update_amount(*args):
+            try:
+                self.auto_purchase_amount = self.amount_var.get()
+            except (tk.TclError, ValueError):
+                pass  # Ignore empty or invalid values
+        self.amount_var.trace_add('write', update_amount)
+        try:
+            self.auto_purchase_amount = self.amount_var.get()
+        except (tk.TclError, ValueError):
+            self.auto_purchase_amount = 10
         row += 1
         
         # Loops per Purchase
@@ -1370,10 +1400,18 @@ Sequence (per user spec):
         help_btn = ttk.Button(frame, text='?', width=3)
         help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
         ToolTip(help_btn, "Buy bait every X fish caught (e.g., 10 = buy bait after every 10 fish)")
-        self.loops_var.trace_add('write', lambda *args: setattr(self, 'loops_per_purchase', self.loops_var.get()))
+        def update_loops(*args):
+            try:
+                self.loops_per_purchase = self.loops_var.get()
+            except (tk.TclError, ValueError):
+                pass  # Ignore empty or invalid values
+        self.loops_var.trace_add('write', update_loops)
         # Auto-save when loops per purchase changes
         self.loops_var.trace_add('write', lambda *args: self.auto_save_settings())
-        self.loops_per_purchase = self.loops_var.get()
+        try:
+            self.loops_per_purchase = self.loops_var.get()
+        except (tk.TclError, ValueError):
+            self.loops_per_purchase = 10
         row += 1
         
         # Point buttons for auto-purchase
@@ -1465,15 +1503,26 @@ Sequence (per user spec):
         self.fruit_storage_var.trace_add('write', lambda *args: (setattr(self, 'fruit_storage_enabled', self.fruit_storage_var.get()), self.auto_save_settings()))
         row += 1
         
-        # Fruit storage key
-        ttk.Label(frame, text='Fruit Key:').grid(row=row, column=0, sticky='e', pady=5, padx=(0, 10))
-        self.fruit_key_var = tk.IntVar(value=int(getattr(self, 'fruit_storage_key', '3')))
+        # Fruit storage key 1
+        ttk.Label(frame, text='Fruit Key 1:').grid(row=row, column=0, sticky='e', pady=5, padx=(0, 10))
+        self.fruit_key_var = tk.IntVar(value=int(getattr(self, 'fruit_storage_key', '2')))
         fruit_key_spinbox = ttk.Spinbox(frame, from_=1, to=9, increment=1, textvariable=self.fruit_key_var, width=10)
         fruit_key_spinbox.grid(row=row, column=1, pady=5, sticky='w')
         help_btn = ttk.Button(frame, text='?', width=3)
         help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
-        ToolTip(help_btn, "Select which key (1-9) to press for fruit storage")
+        ToolTip(help_btn, "Select which key (1-9) to press for first fruit storage")
         self.fruit_key_var.trace_add('write', lambda *args: (setattr(self, 'fruit_storage_key', str(self.fruit_key_var.get())), self.auto_save_settings()))
+        row += 1
+        
+        # Fruit storage key 2
+        ttk.Label(frame, text='Fruit Key 2:').grid(row=row, column=0, sticky='e', pady=5, padx=(0, 10))
+        self.fruit_key_2_var = tk.IntVar(value=int(getattr(self, 'fruit_storage_key_2', '3')))
+        fruit_key_2_spinbox = ttk.Spinbox(frame, from_=1, to=9, increment=1, textvariable=self.fruit_key_2_var, width=10)
+        fruit_key_2_spinbox.grid(row=row, column=1, pady=5, sticky='w')
+        help_btn = ttk.Button(frame, text='?', width=3)
+        help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
+        ToolTip(help_btn, "Select which key (1-9) to press for second fruit storage")
+        self.fruit_key_2_var.trace_add('write', lambda *args: (setattr(self, 'fruit_storage_key_2', str(self.fruit_key_2_var.get())), self.auto_save_settings()))
         row += 1
         
         # Fruit point
@@ -1483,7 +1532,17 @@ Sequence (per user spec):
         self.fruit_point_button.grid(row=row, column=1, pady=5, sticky='w')
         help_btn = ttk.Button(frame, text='?', width=3)
         help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
-        ToolTip(help_btn, "Click to set where to click for fruit selection")
+        ToolTip(help_btn, "Click to set where to click for fruit selection (Store button)")
+        row += 1
+        
+        # Fruit point 2 (backup)
+        ttk.Label(frame, text='Fruit Point 2:').grid(row=row, column=0, sticky='e', pady=5, padx=(0, 10))
+        self.fruit_point_2_button = ttk.Button(frame, text='Fruit Point 2',
+                                            command=lambda: self.capture_mouse_click('fruit_point_2'))
+        self.fruit_point_2_button.grid(row=row, column=1, pady=5, sticky='w')
+        help_btn = ttk.Button(frame, text='?', width=3)
+        help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
+        ToolTip(help_btn, "Optional: Backup click point to help trigger hover detection")
         row += 1
         
         # Rod key
@@ -2551,8 +2610,8 @@ Sequence (per user spec):
             
         preset_data = {
             'auto_purchase_enabled': getattr(self.auto_purchase_var, 'get', lambda: False)(),
-            'auto_purchase_amount': getattr(self.amount_var, 'get', lambda: getattr(self, 'auto_purchase_amount', 100))(),
-            'loops_per_purchase': getattr(self.loops_var, 'get', lambda: getattr(self, 'loops_per_purchase', 1))(),
+            'auto_purchase_amount': self._safe_get_int(self.amount_var, getattr(self, 'auto_purchase_amount', 100)),
+            'loops_per_purchase': self._safe_get_int(self.loops_var, getattr(self, 'loops_per_purchase', 1)),
             'point_coords': getattr(self, 'point_coords', {}),
             'fruit_coords': getattr(self, 'fruit_coords', {}),
             'fishing_location': getattr(self, 'fishing_location', None),
@@ -2718,17 +2777,23 @@ Sequence (per user spec):
             if hasattr(self, 'fruit_storage_var'):
                 self.fruit_storage_var.set(self.fruit_storage_enabled)
             
-            self.fruit_storage_key = preset_data.get('fruit_storage_key', '3')
+            self.fruit_storage_key = preset_data.get('fruit_storage_key', '2')
+            self.fruit_storage_key_2 = preset_data.get('fruit_storage_key_2', '3')
             self.rod_key = preset_data.get('rod_key', '1')
             
             # Update fruit storage buttons if they exist
-            if hasattr(self, 'fruit_key_button'):
-                self.fruit_key_button.config(text=f'Key {self.fruit_storage_key} ✓')
-            if hasattr(self, 'rod_key_button'):
-                self.rod_key_button.config(text=f'Key {self.rod_key} ✓')
+            if hasattr(self, 'fruit_key_var'):
+                self.fruit_key_var.set(int(self.fruit_storage_key))
+            if hasattr(self, 'fruit_key_2_var'):
+                self.fruit_key_2_var.set(int(self.fruit_storage_key_2))
+            if hasattr(self, 'rod_key_var'):
+                self.rod_key_var.set(int(self.rod_key))
             if hasattr(self, 'fruit_point_button') and 'fruit_point' in self.fruit_coords:
                 coords = self.fruit_coords['fruit_point']
                 self.fruit_point_button.config(text=f'Fruit Point: {coords}')
+            if hasattr(self, 'fruit_point_2_button') and 'fruit_point_2' in self.fruit_coords:
+                coords = self.fruit_coords['fruit_point_2']
+                self.fruit_point_2_button.config(text=f'Fruit Point 2: {coords}')
             if hasattr(self, 'bait_point_button') and 'bait_point' in self.fruit_coords:
                 coords = self.fruit_coords['bait_point']
                 self.bait_point_button.config(text=f'Bait Point: {coords}')
@@ -2856,7 +2921,8 @@ Sequence (per user spec):
             self.window_height = preset_data.get('window_height', 650)
 
             self.fruit_storage_enabled = preset_data.get('fruit_storage_enabled', False)
-            self.fruit_storage_key = preset_data.get('fruit_storage_key', '3')
+            self.fruit_storage_key = preset_data.get('fruit_storage_key', '2')
+            self.fruit_storage_key_2 = preset_data.get('fruit_storage_key_2', '3')
             self.rod_key = preset_data.get('rod_key', '1')
             self.bait_point = preset_data.get('bait_point', '2')
             
@@ -2993,6 +3059,9 @@ Sequence (per user spec):
             if hasattr(self, 'fruit_point_button') and 'fruit_point' in self.fruit_coords:
                 coords = self.fruit_coords['fruit_point']
                 self.fruit_point_button.config(text=f'Fruit Point: {coords}')
+            if hasattr(self, 'fruit_point_2_button') and 'fruit_point_2' in self.fruit_coords:
+                coords = self.fruit_coords['fruit_point_2']
+                self.fruit_point_2_button.config(text=f'Fruit Point 2: {coords}')
             if hasattr(self, 'bait_point_button') and 'bait_point' in self.fruit_coords:
                 coords = self.fruit_coords['bait_point']
                 self.bait_point_button.config(text=f'Bait Point: {coords}')

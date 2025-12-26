@@ -140,6 +140,7 @@ class SettingsManager:
             # Fruit storage settings
             self.app.fruit_storage_enabled = preset_data.get('fruit_storage_enabled', True)
             self.app.fruit_storage_key = preset_data.get('fruit_storage_key', '2')
+            self.app.fruit_storage_key_2 = preset_data.get('fruit_storage_key_2', '3')
             self.app.rod_key = preset_data.get('rod_key', '1')
             
             # PD Controller settings
