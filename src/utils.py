@@ -1,19 +1,19 @@
 import tkinter as tk
 from tkinter import ttk
 
-# Consistent Dark Red Color Palette
-MAIN_COLOR = "#DC2626"      # Tailwind red-600 (consistent dark red)
-BUTTON_COLOR = "#DC2626"    # Same as main for consistency
-BG_COLOR = "#FFFFFF"        # White for section backgrounds
-CARD_COLOR = "#DC2626"      # Same dark red for status cards
-BORDER_COLOR = "#B91C1C"    # Tailwind red-700 for borders (darker)
+                                   
+MAIN_COLOR = "#DC2626"                                              
+BUTTON_COLOR = "#DC2626"                                  
+BG_COLOR = "#FFFFFF"                                       
+CARD_COLOR = "#DC2626"                                      
+BORDER_COLOR = "#B91C1C"                                           
 
 class ToolTip:
     def __init__(self, widget, text):
         self.widget = widget
         self.text = text
         self.tooltip_window = None
-        self.delay = 500  # 500ms delay before showing
+        self.delay = 500                              
         self.after_id = None
         self.widget.bind("<Enter>", self.on_enter)
         self.widget.bind("<Leave>", self.on_leave)
@@ -41,12 +41,12 @@ class ToolTip:
         if self.tooltip_window or not self.text:
             return
         
-        # Get widget position and size
+                                      
         x = self.widget.winfo_rootx()
         y = self.widget.winfo_rooty()
         widget_height = self.widget.winfo_height()
         
-        # Position tooltip below the widget
+                                           
         tooltip_x = x + 10
         tooltip_y = y + widget_height + 5
         
@@ -54,7 +54,7 @@ class ToolTip:
         tw.wm_overrideredirect(True)
         tw.wm_attributes('-topmost', True)
         
-        # Simple tooltip with regular tkinter
+                                             
         label = tk.Label(
             tw,
             text=self.text,
@@ -68,10 +68,10 @@ class ToolTip:
         )
         label.pack()
         
-        # Position the tooltip
+                              
         tw.wm_geometry(f"+{tooltip_x}+{tooltip_y}")
         
-        # Auto-hide after 10 seconds
+                                    
         tw.after(10000, self.hide_tooltip)
     
     def hide_tooltip(self):
@@ -82,7 +82,7 @@ class ToolTip:
 class GlassFrame(tk.Frame):
     """Modern white frame with red border"""
     def __init__(self, master, **kwargs):
-        glass_color = kwargs.pop('glass_color', BG_COLOR)  # White background
+        glass_color = kwargs.pop('glass_color', BG_COLOR)                    
         
         super().__init__(
             master,
@@ -128,11 +128,11 @@ class ToggleButton(ctk.CTkButton):
         self.on_toggle_callback = on_toggle
         self.base_text = text
         
-        # Colors for enabled/disabled states
-        self.enabled_color = "#16A34A"  # Green when enabled
-        self.disabled_color = "#6B7280"  # Gray when disabled
-        self.enabled_hover = "#15803D"  # Darker green hover
-        self.disabled_hover = "#4B5563"  # Darker gray hover
+                                            
+        self.enabled_color = "#16A34A"                      
+        self.disabled_color = "#6B7280"                      
+        self.enabled_hover = "#15803D"                      
+        self.disabled_hover = "#4B5563"                     
         
         if 'font' not in kwargs:
             kwargs['font'] = ctk.CTkFont(size=12, weight="bold")
@@ -168,13 +168,13 @@ class ToggleButton(ctk.CTkButton):
             self.configure(
                 fg_color=self.enabled_color,
                 hover_color=self.enabled_hover,
-                border_color="#22C55E"  # Light green border
+                border_color="#22C55E"                      
             )
         else:
             self.configure(
                 fg_color=self.disabled_color,
                 hover_color=self.disabled_hover,
-                border_color="#9CA3AF"  # Light gray border
+                border_color="#9CA3AF"                     
             )
     
     def _on_enter(self, event=None):
@@ -256,7 +256,7 @@ class CollapsibleFrame:
 class StatusCard(ctk.CTkFrame):
     """Animated status card with dynamic background colors"""
     def __init__(self, master, title, value, icon="●", **kwargs):
-        # Store default colors
+                              
         self.default_bg_color = CARD_COLOR
         self.default_border_color = BORDER_COLOR
         
@@ -308,11 +308,11 @@ class StatusCard(ctk.CTkFrame):
         """Update card with status-based colors"""
         self.value_label.configure(text=value)
         
-        # Define status colors
+                              
         status_colors = {
-            "active": {"bg": "#16A34A", "border": "#22C55E"},      # Green for active
-            "paused": {"bg": "#F59E0B", "border": "#FCD34D"},      # Yellow for paused
-            "error": {"bg": "#EF4444", "border": "#F87171"},       # Red for error
+            "active": {"bg": "#16A34A", "border": "#22C55E"},                        
+            "paused": {"bg": "#F59E0B", "border": "#FCD34D"},                         
+            "error": {"bg": "#EF4444", "border": "#F87171"},                      
             "default": {"bg": self.default_bg_color, "border": self.default_border_color}
         }
         

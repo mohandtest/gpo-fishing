@@ -1,46 +1,61 @@
 {
-  "auto_purchase_enabled": false,
+  "auto_purchase_enabled": true,
   "auto_purchase_amount": 10,
   "loops_per_purchase": 10,
+  "purchase_interval": 10,
   "point_coords": {
     "1": [
       801,
       939
     ],
     "2": [
-      957,
+      954,
       941
     ],
     "3": [
-      1111,
-      940
+      1109,
+      943
     ]
   },
   "fruit_coords": {
     "fruit_point": [
-      950,
-      832
+      913,
+      830
     ],
     "bait_point": [
-      953,
-      772
+      426,
+      949
+    ],
+    "fruit_point_2": [
+      1008,
+      827
     ]
   },
   "fishing_location": [
-    937,
-    383
+    949,
+    300
   ],
   "fruit_storage_enabled": true,
   "fruit_storage_key": "2",
+  "fruit_storage_key_2": "3",
   "rod_key": "1",
+  "auto_bait_enabled": false,
+  "top_bait_coords": [
+    825,
+    282
+  ],
+  "top_bait_coords_2": [
+    779,
+    295
+  ],
   "kp": 0.1,
   "kd": 0.5,
   "scan_timeout": 14.0,
   "wait_after_loss": 1.0,
   "smart_check_interval": 15.0,
-  "webhook_url": "",
+  "webhook_url": "D",
   "webhook_enabled": false,
-  "webhook_interval": 11,
+  "webhook_interval": 10,
   "fish_progress_webhook_enabled": true,
   "devil_fruit_webhook_enabled": true,
   "fruit_spawn_webhook_enabled": true,
@@ -48,10 +63,8 @@
   "recovery_webhook_enabled": true,
   "bait_webhook_enabled": true,
   "ocr_performance_mode": "fast",
-  "auto_bait_enabled": true,
-  "top_bait_coords": [],
-  "window_width": 420,
-  "window_height": 756,
+  "window_width": 600,
+  "window_height": 770,
   "dark_theme": true,
   "current_theme": "dark",
   "layout_settings": {
@@ -97,12 +110,12 @@
     }
   },
   "zoom_settings": {
-    "auto_zoom_enabled": true,
+    "auto_zoom_enabled": false,
     "zoom_out_steps": 5,
-    "zoom_in_steps": 8,
+    "zoom_in_steps": 3,
     "step_delay": 0.1,
     "sequence_delay": 0.5,
     "zoom_cooldown": 2.0
   },
-  "last_saved": "2025-12-10T20:22:08.906252"
+  "last_saved": "2026-01-25T04:02:29.241517"
 }

@@ -7,8 +7,8 @@ class ThemeManager:
     def __init__(self, app):
         self.app = app
         self.themes = {
-        "default": {
-    "name": "Default",
+        "red": {
+    "name": "Red Theme",
     "description": "Dark red theme with bold, modern styling",
     "colors": {
         "bg": "#160003",
@@ -154,6 +154,78 @@ class ThemeManager:
                     "scrollbar_active": "#2a2a2a",
                     "scrollbar_pressed": "#3a3a3a"
                 }
+            },
+            "solarized": {
+                "name": "Solarized Dark",
+                "description": "Scientifically designed for reduced eye strain with precise color contrast",
+                "colors": {
+                    "bg": "#002b36",
+                    "fg": "#839496",
+                    "accent": "#268bd2",
+                    "success": "#859900",
+                    "error": "#dc322f",
+                    "warning": "#b58900",
+                    "button_bg": "#073642",
+                    "button_hover": "#094554",
+                    "scrollbar_bg": "#073642",
+                    "scrollbar_trough": "#002b36",
+                    "scrollbar_active": "#094554",
+                    "scrollbar_pressed": "#0b5563"
+                }
+            },
+            "forest": {
+                "name": "Forest Green",
+                "description": "Natural green tones proven to reduce eye fatigue and promote calm",
+                "colors": {
+                    "bg": "#1a2421",
+                    "fg": "#d4e7d4",
+                    "accent": "#4a9d5f",
+                    "success": "#6bc783",
+                    "error": "#e06c75",
+                    "warning": "#d19a66",
+                    "button_bg": "#243329",
+                    "button_hover": "#2d4034",
+                    "scrollbar_bg": "#243329",
+                    "scrollbar_trough": "#1a2421",
+                    "scrollbar_active": "#2d4034",
+                    "scrollbar_pressed": "#364d3f"
+                }
+            },
+            "nord": {
+                "name": "Nord",
+                "description": "Arctic-inspired palette with optimal contrast and reduced blue light",
+                "colors": {
+                    "bg": "#2e3440",
+                    "fg": "#eceff4",
+                    "accent": "#88c0d0",
+                    "success": "#a3be8c",
+                    "error": "#bf616a",
+                    "warning": "#ebcb8b",
+                    "button_bg": "#3b4252",
+                    "button_hover": "#434c5e",
+                    "scrollbar_bg": "#3b4252",
+                    "scrollbar_trough": "#2e3440",
+                    "scrollbar_active": "#434c5e",
+                    "scrollbar_pressed": "#4c566a"
+                }
+            },
+            "sepia": {
+                "name": "Sepia Comfort",
+                "description": "Warm sepia tones that reduce blue light exposure for evening use",
+                "colors": {
+                    "bg": "#2b2218",
+                    "fg": "#e8d5c4",
+                    "accent": "#c4915e",
+                    "success": "#94b894",
+                    "error": "#c67171",
+                    "warning": "#d4a574",
+                    "button_bg": "#3d3025",
+                    "button_hover": "#4a3a2e",
+                    "scrollbar_bg": "#3d3025",
+                    "scrollbar_trough": "#2b2218",
+                    "scrollbar_active": "#4a3a2e",
+                    "scrollbar_pressed": "#574437"
+                }
             }
         }
     
@@ -170,22 +242,22 @@ class ThemeManager:
         self.app.theme_window.transient(self.app.root)
         self.app.theme_window.grab_set()
         
-        # Center the window
+                           
         self.app.theme_window.update_idletasks()
         x = (self.app.theme_window.winfo_screenwidth() // 2) - (600 // 2)
         y = (self.app.theme_window.winfo_screenheight() // 2) - (450 // 2)
         self.app.theme_window.geometry(f"600x450+{x}+{y}")
         
-        # Always use default theme colors for the theme window itself to avoid conflicts
-        window_colors = self.themes["default"]["colors"]
+                                                                                    
+        window_colors = self.themes["red"]["colors"]
         self.app.theme_window.configure(bg=window_colors["bg"])
         
-        # Modern header with gradient-like effect
+                                                 
         header_frame = tk.Frame(self.app.theme_window, bg=window_colors["bg"], height=80)
         header_frame.pack(fill="x", pady=(0, 20))
         header_frame.pack_propagate(False)
         
-        # Title with better styling
+                                   
         title_label = tk.Label(
             header_frame,
             text="🎨 Choose Your Theme",
@@ -195,7 +267,7 @@ class ThemeManager:
         )
         title_label.pack(expand=True)
         
-        # Subtitle
+                  
         subtitle_label = tk.Label(
             header_frame,
             text="Select a theme to customize your experience",
@@ -205,23 +277,23 @@ class ThemeManager:
         )
         subtitle_label.pack()
         
-        # Main content area with modern grid layout
+                                                   
         content_frame = tk.Frame(self.app.theme_window, bg=window_colors["bg"])
         content_frame.pack(fill="both", expand=True, padx=30, pady=(0, 20))
         
-        # Create theme cards in a grid layout
+                                             
         row = 0
         col = 0
         for theme_key, theme_data in self.themes.items():
             self.create_modern_theme_card(content_frame, theme_key, theme_data, window_colors, row, col)
             col += 1
-            if col >= 2:  # 2 columns
+            if col >= 2:             
                 col = 0
                 row += 1
         
-        # No footer - window will auto-close when theme is applied
+                                                                  
         
-        # Handle window close
+                             
         self.app.theme_window.protocol("WM_DELETE_WINDOW", self.close_theme_window)
     
     def create_modern_theme_card(self, parent, theme_key, theme_data, window_colors, row, col):
@@ -229,15 +301,15 @@ class ThemeManager:
         theme_colors = theme_data["colors"]
         is_current = theme_key == self.app.current_theme
         
-        # Main card container
+                             
         card_container = tk.Frame(parent, bg=window_colors["bg"])
         card_container.grid(row=row, column=col, padx=15, pady=15, sticky="nsew")
         
-        # Configure grid weights
+                                
         parent.grid_rowconfigure(row, weight=1)
         parent.grid_columnconfigure(col, weight=1)
         
-        # Card frame - SAME for ALL themes
+                                          
         card_frame = tk.Frame(
             card_container,
             bg=window_colors["button_bg"],
@@ -246,7 +318,7 @@ class ThemeManager:
         )
         card_frame.pack(fill="both", expand=True, padx=5, pady=5)
         
-        # Theme name at top
+                           
         name_label = tk.Label(
             card_frame,
             text=theme_data["name"],
@@ -256,11 +328,11 @@ class ThemeManager:
         )
         name_label.pack(pady=(15, 10))
         
-        # Color preview section
+                               
         preview_frame = tk.Frame(card_frame, bg=window_colors["button_bg"])
         preview_frame.pack(fill="x", padx=15, pady=(0, 10))
         
-        # Show theme's actual background color
+                                              
         color_preview = tk.Frame(
             preview_frame,
             bg=theme_colors["bg"],
@@ -271,11 +343,11 @@ class ThemeManager:
         color_preview.pack(fill="x")
         color_preview.pack_propagate(False)
         
-        # Theme colors in preview - better text visibility
+                                                          
         if theme_colors["bg"] == "#ffffff":
-            preview_text_color = theme_colors["fg"]  # Use dark text on white
+            preview_text_color = theme_colors["fg"]                          
         else:
-            preview_text_color = theme_colors["accent"]  # Use accent on dark
+            preview_text_color = theme_colors["accent"]                      
             
         preview_text = tk.Label(
             color_preview,
@@ -286,7 +358,7 @@ class ThemeManager:
         )
         preview_text.pack(expand=True)
         
-        # Description
+                     
         desc_label = tk.Label(
             card_frame,
             text=theme_data["description"],
@@ -298,7 +370,7 @@ class ThemeManager:
         )
         desc_label.pack(padx=15, pady=(0, 15))
         
-        # Action button
+                       
         if is_current:
             btn = tk.Button(
                 card_frame,
@@ -330,12 +402,12 @@ class ThemeManager:
     def apply_theme_and_close(self, theme_key):
         """Apply theme and immediately close window"""
         if theme_key in self.themes:
-            # Apply the theme
+                             
             self.app.current_theme = theme_key
             self.app.apply_theme()
             self.app.auto_save_settings()
             
-            # Close window immediately - NO STATUS UPDATE
+                                                         
             if hasattr(self.app, 'theme_window') and self.app.theme_window:
                 self.app.theme_window.destroy()
                 self.app.theme_window = None
@@ -344,37 +416,37 @@ class ThemeManager:
     
     def apply_theme(self, theme_key):
         """Apply the selected theme"""
-        print(f"Applying theme: {theme_key}")  # Debug print
+        print(f"Applying theme: {theme_key}")               
         if theme_key in self.themes:
             self.app.current_theme = theme_key
             self.app.apply_theme()
             self.app.auto_save_settings()
             
-            # Update status message
+                                   
             theme_name = self.themes[theme_key]["name"]
             self.app.update_status(f'Applied {theme_name}', 'success', '🎨')
         else:
-            print(f"Theme {theme_key} not found!")  # Debug print
+            print(f"Theme {theme_key} not found!")               
     
     def lighten_color(self, color):
         """Lighten a hex color for hover effects"""
         try:
-            # Remove # if present
+                                 
             color = color.lstrip('#')
-            # Convert to RGB
+                            
             r, g, b = tuple(int(color[i:i+2], 16) for i in (0, 2, 4))
-            # Lighten by 20%
+                            
             r = min(255, int(r * 1.2))
             g = min(255, int(g * 1.2))
             b = min(255, int(b * 1.2))
             return f'#{r:02x}{g:02x}{b:02x}'
         except:
-            return color  # Return original if conversion fails
+            return color                                       
     
     def close_theme_window(self):
         """Close the theme window"""
         if hasattr(self.app, 'theme_window') and self.app.theme_window:
-            # Unbind mouse wheel events
+                                       
             try:
                 self.app.theme_window.unbind_all("<MouseWheel>")
             except:
@@ -387,12 +459,12 @@ class ThemeManager:
         """Load the logo for the theme - always use icon.webp"""
         import sys
         try:
-            # Handle logo path for both development and PyInstaller bundle
+                                                                          
             if hasattr(sys, '_MEIPASS'):
-                # Running as PyInstaller bundle
+                                               
                 logo_path = os.path.join(sys._MEIPASS, "images", "icon.webp")
             else:
-                # Running as script
+                                   
                 logo_path = os.path.join("images", "icon.webp")
             
             if os.path.exists(logo_path):
@@ -408,5 +480,5 @@ class ThemeManager:
     
     def update_logo(self):
         """Update the logo in the main window based on current theme"""
-        # Logo functionality disabled - using text title only
+                                                             
         pass

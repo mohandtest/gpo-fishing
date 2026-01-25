@@ -9,27 +9,27 @@ import os
 class LayoutManager:
     def __init__(self, app):
         self.app = app
-        self.current_layout = "bar"  # "bar" or "drop"
+        self.current_layout = "bar"                   
         
-        # Layout configurations
+                               
         self.layouts = {
             "bar": {
                 "name": "BAR LAYOUT",
-                "color": (85, 170, 255),  # Blue
+                "color": (85, 170, 255),        
                 "border_color": (0, 100, 200),
-                "area": None,  # Will be set by user
+                "area": None,                       
                 "description": "Fishing Bar Detection"
             },
             "drop": {
                 "name": "DROP LAYOUT", 
-                "color": (85, 255, 85),   # Green
+                "color": (85, 255, 85),          
                 "border_color": (0, 200, 0),
-                "area": None,  # Will be set by user
+                "area": None,                       
                 "description": "Loot Drop Recognition"
             }
         }
         
-        # Load saved layout areas
+                                 
         self.load_layout_settings()
     
     def get_current_layout(self):
@@ -55,7 +55,7 @@ class LayoutManager:
         
         print(f"🔄 Layout switched: {self.layouts[old_layout]['name']} → {self.layouts[self.current_layout]['name']}")
         
-        # Save current layout preference
+                                        
         self.save_layout_settings()
         
         return self.current_layout
@@ -86,10 +86,10 @@ class LayoutManager:
                 with open(settings_file, 'r') as f:
                     data = json.load(f)
                 
-                # Load current layout
+                                     
                 self.current_layout = data.get("current_layout", "bar")
                 
-                # Load layout areas
+                                   
                 for layout_name in ["bar", "drop"]:
                     if layout_name in data.get("layout_areas", {}):
                         self.layouts[layout_name]["area"] = data["layout_areas"][layout_name]

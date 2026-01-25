@@ -1,8 +1,20 @@
 [![Discord](https://img.shields.io/badge/Discord-Join%20Server-7289da?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/unPZxXAtfb)
 
-# 🎣 GPO Autofish - GUIDE
+# 🎣 GPO Autofish v3.0 - GUIDE
 
 **💬 Join our Discord server:** https://discord.gg/unPZxXAtfb
+
+## 🆕 What's New in v3.0?
+
+**Major UI Overhaul - Modern & User-Friendly:**
+
+- ✨ **Complete Redesign** - Brand new tabbed interface for better organization
+- 📊 **Dashboard Overview** - Real-time stats, activity feed, and quick controls
+- 🎯 **Step-by-Step Setup** - Guided setup wizard makes configuration easy
+- ⚡ **Feature Cards** - All features organized in clean, easy-to-use cards
+- 🎨 **Enhanced Themes** - Improved styling with better visual hierarchy
+- 📱 **Better Navigation** - Tabs instead of collapsible sections
+- 🚀 **Quick Start** - Get fishing in minutes with the new interface
 
 ## What is this?
 

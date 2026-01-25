@@ -1,13 +1,43 @@
 import tkinter as tk
 from tkinter import ttk
 
+class ToolTip:
+    """Simple tooltip for overlay point indicators"""
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tooltip = None
+        self.widget.bind("<Enter>", self.show)
+        self.widget.bind("<Leave>", self.hide)
+    
+    def show(self, event=None):
+        if self.tooltip:
+            return
+                             
+        x = self.widget.winfo_rootx() + 25
+        y = self.widget.winfo_rooty() + 25
+        
+        self.tooltip = tk.Toplevel(self.widget)
+        self.tooltip.wm_overrideredirect(True)
+        self.tooltip.wm_geometry(f"+{x}+{y}")
+        
+        label = tk.Label(self.tooltip, text=self.text, background="#ffffe0",
+                        relief=tk.SOLID, borderwidth=1, font=("Arial", 9))
+        label.pack()
+    
+    def hide(self, event=None):
+        if self.tooltip:
+            self.tooltip.destroy()
+            self.tooltip = None
+
 class OverlayManager:
     def __init__(self, app, fixed_layout=None):
         self.app = app
-        self.fixed_layout = fixed_layout  # If set, always use this layout instead of current
+        self.fixed_layout = fixed_layout                                                     
         self.window = None
         self.frame = None
         self.label = None
+        self.point_indicators = []                                 
         self.drag_data = {'x': 0, 'y': 0, 'resize_edge': None, 'start_width': 0, 
                          'start_height': 0, 'start_x': 0, 'start_y': 0}
     
@@ -21,7 +51,7 @@ class OverlayManager:
         self.window.attributes('-topmost', True)
         self.window.minsize(1, 1)
         
-        # Get current layout area
+                                 
         current_area = self.get_current_area()
         x = current_area['x']
         y = current_area['y']
@@ -30,7 +60,7 @@ class OverlayManager:
         geometry = f"{width}x{height}+{x}+{y}"
         self.window.geometry(geometry)
         
-        # Create frame with layout-specific colors
+                                                  
         current_layout = self.get_current_layout()
         layout_config = self.app.layout_manager.layouts[current_layout]
         bg_color = self._rgb_to_hex(layout_config['color'])
@@ -40,25 +70,28 @@ class OverlayManager:
                              highlightbackground=border_color)
         self.frame.pack(fill=tk.BOTH, expand=True)
         
-        # Add layout label overlaid on the content (no separate header space)
+                                                                             
         self.label = tk.Label(self.frame, text=layout_config['name'], 
                              bg=bg_color, fg='white', font=('Arial', 12, 'bold'))
-        # Center the label at the top
+                                     
         self.label.place(relx=0.5, y=5, anchor='n')
         
-        # Add text display area for OCR results (only for drop layout)
+                                                                      
         self.text_display = None
         current_layout = self.get_current_layout()
         if current_layout == 'drop':
-            # Create text display with transparent background matching the overlay style
+                                                                                        
             self.text_display = tk.Text(self.frame, height=4, width=30, 
                                       bg=bg_color, fg='white', font=('Courier', 9),
                                       wrap=tk.WORD, state=tk.DISABLED, bd=0, 
                                       highlightthickness=0, relief='flat')
-            # Position it below the title with some padding
+                                                           
             self.text_display.pack(pady=(30, 5), padx=5, fill=tk.BOTH, expand=True)
         
-        # Bind events
+                                     
+        self.draw_click_points()
+        
+                     
         self.window.bind("<ButtonPress-1>", self._start_action)
         self.window.bind("<B1-Motion>", self._motion)
         self.window.bind("<Motion>", self._update_cursor)
@@ -68,14 +101,84 @@ class OverlayManager:
         self.frame.bind("<B1-Motion>", self._motion)
         self.frame.bind("<Motion>", self._update_cursor)
         
-        # Bind mouse events to label as well
+                                            
         self.label.bind("<ButtonPress-1>", self._start_action)
         self.label.bind("<B1-Motion>", self._motion)
         self.label.bind("<Motion>", self._update_cursor)
     
+    def draw_click_points(self):
+        """Draw visual indicators for all configured click points as separate topmost windows"""
+        if not self.window:
+            print("❌ draw_click_points: No window")
+            return
+        
+        print(f"\n🔍 Drawing click points as separate topmost windows")
+        
+                                   
+        for indicator in self.point_indicators:
+            try:
+                indicator.destroy()
+            except:
+                pass
+        self.point_indicators = []
+        
+        print(f"App point_coords: {self.app.point_coords}")
+        print(f"App fruit_coords: {self.app.fruit_coords}")
+        print(f"App fishing_location: {getattr(self.app, 'fishing_location', None)}")
+        
+                                                   
+        points_config = [
+                                    
+            (getattr(self.app, 'fishing_location', None), '#FFD700', 'Cast Location'),          
+            (self.app.point_coords.get(1, None), '#9370DB', 'Auto-Purchase Point 1'),          
+            (self.app.point_coords.get(2, None), '#9370DB', 'Auto-Purchase Point 2'),          
+            (self.app.point_coords.get(3, None), '#9370DB', 'Auto-Purchase Point 3'),          
+            (self.app.fruit_coords.get('fruit_point', None), '#FF69B4', 'Fruit Storage Point'),        
+            (self.app.fruit_coords.get('fruit_point_2', None), '#FF69B4', 'Fruit Storage Point 2'),        
+            (self.app.fruit_coords.get('bait_point', None), '#00CED1', 'Bait Selection Point'),        
+        ]
+        
+        for coords, color, label in points_config:
+            if coords:
+                                                 
+                point_x = coords[0]
+                point_y = coords[1]
+                
+                print(f"✅ Creating TOPMOST indicator window for {label} at screen ({point_x}, {point_y})")
+                
+                                                                     
+                indicator_window = tk.Toplevel(self.app.root)
+                indicator_window.overrideredirect(True)
+                indicator_window.attributes('-topmost', True)
+                indicator_window.attributes('-alpha', 0.95)
+                indicator_window.attributes('-transparentcolor', 'black')
+                
+                                                      
+                indicator_window.geometry(f"32x32+{point_x-16}+{point_y-16}")
+                
+                                              
+                container = tk.Frame(indicator_window, bg='black')
+                container.pack(fill='both', expand=True)
+                
+                                                   
+                indicator = tk.Label(container, text="●", 
+                                   fg=color, bg='black',
+                                   font=('Arial', 22, 'bold'),
+                                   relief='solid', bd=2,
+                                   borderwidth=2,
+                                   highlightbackground='white',
+                                   highlightthickness=2)
+                indicator.pack(expand=True, padx=2, pady=2)
+                
+                             
+                ToolTip(indicator, label)
+                
+                self.point_indicators.append(indicator_window)
+                print(f"✓ Drew {label} at ({point_x}, {point_y}) with color {color}")
+    
     def destroy(self):
         if self.window is not None:
-            # Save area to the correct layout
+                                             
             current_layout = self.get_current_layout()
             area = {
                 'x': self.window.winfo_x(),
@@ -84,6 +187,14 @@ class OverlayManager:
                 'height': self.window.winfo_height()
             }
             self.app.layout_manager.set_layout_area(current_layout, area)
+            
+                              
+            for indicator in self.point_indicators:
+                try:
+                    indicator.destroy()
+                except:
+                    pass
+            self.point_indicators = []
             
             self.window.destroy()
             self.window = None
@@ -140,6 +251,8 @@ class OverlayManager:
             x = self.window.winfo_x() + event.x - self.drag_data['x']
             y = self.window.winfo_y() + event.y - self.drag_data['y']
             self.window.geometry(f'+{x}+{y}')
+                                       
+            self.app.root.after(10, self.draw_click_points)
         else:
             dx = event.x - self.drag_data['x']
             dy = event.y - self.drag_data['y']
@@ -162,10 +275,12 @@ class OverlayManager:
                 new_y = self.drag_data['start_y'] + dy
             
             self.window.geometry(f"{new_width}x{new_height}+{new_x}+{new_y}")
+                                         
+            self.app.root.after(10, self.draw_click_points)
     
     def _on_configure(self, event=None):
         if self.window is not None:
-            # Update area for the correct layout
+                                                
             current_layout = self.get_current_layout()
             area = {
                 'x': self.window.winfo_x(),
@@ -185,16 +300,16 @@ class OverlayManager:
         current_layout = self.get_current_layout()
         area = self.app.layout_manager.get_layout_area(current_layout)
         
-        # Provide layout-specific defaults if no area set
+                                                         
         if not area:
             if current_layout == 'bar':
-                # Default bar layout area (fishing bar position)
+                                                                
                 area = {'x': 700, 'y': 400, 'width': 200, 'height': 100}
             elif current_layout == 'drop':
-                # Default drop layout area (loot drop position)  
+                                                                 
                 area = {'x': 800, 'y': 200, 'width': 300, 'height': 400}
             else:
-                # Fallback to legacy overlay_area
+                                                 
                 area = getattr(self.app, 'overlay_area', {'x': 100, 'y': 100, 'width': 200, 'height': 100}).copy()
         
         return area
@@ -207,7 +322,7 @@ class OverlayManager:
         current_layout = self.get_current_layout()
         layout_config = self.app.layout_manager.layouts[current_layout]
         
-        # Update colors
+                       
         bg_color = self._rgb_to_hex(layout_config['color'])
         border_color = self._rgb_to_hex(layout_config['border_color'])
         
@@ -216,30 +331,33 @@ class OverlayManager:
         
         if self.label:
             self.label.config(text=layout_config['name'], bg=bg_color)
-            # Ensure label is properly positioned and visible
+                                                             
             self.label.place(relx=0.5, y=5, anchor='n')
         
-        # Add or remove text display based on layout
+                                                    
         if current_layout == 'drop' and not self.text_display:
-            # Create text display with transparent background matching the overlay style
+                                                                                        
             self.text_display = tk.Text(self.frame, height=4, width=30, 
                                       bg=bg_color, fg='white', font=('Courier', 9),
                                       wrap=tk.WORD, state=tk.DISABLED, bd=0, 
                                       highlightthickness=0, relief='flat')
-            # Position it below the title with some padding
+                                                           
             self.text_display.pack(pady=(30, 5), padx=5, fill=tk.BOTH, expand=True)
         elif current_layout == 'bar' and self.text_display:
             self.text_display.destroy()
             self.text_display = None
         
-        # Update text display colors if it exists
+                                                 
         if self.text_display and current_layout == 'drop':
             self.text_display.config(bg=bg_color, fg='white')
         
-        # Update position to current layout area
+                                                
         current_area = self.get_current_area()
         geometry = f"{current_area['width']}x{current_area['height']}+{current_area['x']}+{current_area['y']}"
         self.window.geometry(geometry)
+        
+                             
+        self.draw_click_points()
         
         print(f"🎯 Overlay updated for {layout_config['name']}")
     
@@ -249,13 +367,13 @@ class OverlayManager:
             self.text_display.config(state=tk.NORMAL)
             self.text_display.delete(1.0, tk.END)
             
-            # Add timestamp
+                           
             import datetime
             timestamp = datetime.datetime.now().strftime("%H:%M:%S")
             self.text_display.insert(tk.END, f"[{timestamp}]\n", "timestamp")
             self.text_display.insert(tk.END, text + "\n\n")
             
-            # Scroll to bottom
+                              
             self.text_display.see(tk.END)
             self.text_display.config(state=tk.DISABLED)
     

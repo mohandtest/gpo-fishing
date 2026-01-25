@@ -3,13 +3,13 @@ from datetime import datetime
 class WebhookManager:
     def __init__(self, app):
         self.app = app
-        self.devil_fruit_count = 0  # Track devil fruits caught
+        self.devil_fruit_count = 0                             
     
     def send_fishing_progress(self):
         if not self.app.webhook_url or not self.app.webhook_enabled:
             return
         
-        # Check if fish progress notifications are enabled
+                                                          
         if not getattr(self.app, 'fish_progress_webhook_enabled', True):
             return
             
@@ -44,7 +44,7 @@ class WebhookManager:
         if not self.app.webhook_url or not self.app.webhook_enabled:
             return
         
-        # Check if spawn notifications are enabled
+                                                  
         if not getattr(self.app, 'fruit_spawn_webhook_enabled', True):
             return
             
@@ -54,7 +54,7 @@ class WebhookManager:
             embed = {
                 "title": "🌟 Devil Fruit Spawned!",
                 "description": f"A **{fruit_name}** devil fruit has spawned in the world!",
-                "color": 0xFFD700,  # Gold color for spawn
+                "color": 0xFFD700,                        
                 "fields": [
                     {"name": "🍎 Fruit", "value": fruit_name, "inline": True},
                     {"name": "⏰ Time", "value": datetime.now().strftime("%H:%M:%S"), "inline": True}
@@ -79,27 +79,27 @@ class WebhookManager:
         if not self.app.webhook_url or not self.app.webhook_enabled:
             return
         
-        # Check if devil fruit notifications are enabled
+                                                        
         if not getattr(self.app, 'devil_fruit_webhook_enabled', True):
             return
             
-        # Increment devil fruit counter
+                                       
         self.devil_fruit_count += 1
             
         try:
             import requests
             
-            # Build description with OCR text if available
+                                                          
             description = "Devil fruit detected and stored!"
             if drop_info and drop_info.get('ocr_text'):
-                # Clean up the OCR text for display
-                ocr_text = drop_info['ocr_text'][:100]  # Limit length
+                                                   
+                ocr_text = drop_info['ocr_text'][:100]                
                 description += f"\n\n**OCR Text:** {ocr_text}"
             
             embed = {
                 "title": "🍎 Devil Fruit Caught!",
                 "description": description,
-                "color": 0x9c27b0,  # Purple color for devil fruit
+                "color": 0x9c27b0,                                
                 "fields": [
                     {"name": "🍎 Devil Fruits", "value": str(self.devil_fruit_count), "inline": True},
                     {"name": "🐟 Total Fish Caught", "value": str(self.app.fish_count), "inline": True},
@@ -109,7 +109,7 @@ class WebhookManager:
                 "timestamp": datetime.utcnow().isoformat()
             }
             
-            # Add detection confidence if available
+                                                   
             if drop_info and drop_info.get('keyword_matches'):
                 embed["fields"].append({
                     "name": "🎯 Detection", 
@@ -134,7 +134,7 @@ class WebhookManager:
         if not self.app.webhook_url or not self.app.webhook_enabled:
             return
         
-        # Check if purchase notifications are enabled
+                                                     
         if not getattr(self.app, 'purchase_webhook_enabled', True):
             return
             
@@ -170,14 +170,14 @@ class WebhookManager:
         if not self.app.webhook_url or not self.app.webhook_enabled:
             return
         
-        # Check if bait notifications are enabled
+                                                 
         if not getattr(self.app, 'bait_webhook_enabled', True):
             return
             
         try:
             import requests
             
-            # Create quantities display
+                                       
             qty_display = []
             for bait, qty in remaining_quantities.items():
                 qty_display.append(f"{bait.title()}: {qty}")
@@ -185,7 +185,7 @@ class WebhookManager:
             embed = {
                 "title": "🎣 Bait Depleted!",
                 "description": f"**{bait_type.title()}** bait has run out!",
-                "color": 0xff6b35,  # Orange-red color for warning
+                "color": 0xff6b35,                                
                 "fields": [
                     {"name": "🚨 Depleted Bait", "value": bait_type.title(), "inline": True},
                     {"name": "📊 Remaining Bait", "value": "\n".join(qty_display), "inline": True},
@@ -211,7 +211,7 @@ class WebhookManager:
         if not self.app.webhook_url or not self.app.webhook_enabled:
             return
         
-        # Check if bait notifications are enabled
+                                                 
         if not getattr(self.app, 'bait_webhook_enabled', True):
             return
             
@@ -221,7 +221,7 @@ class WebhookManager:
             embed = {
                 "title": "🛒 Auto Purchase Triggered",
                 "description": f"Auto purchase activated: {reason}",
-                "color": 0x4caf50,  # Green color for action
+                "color": 0x4caf50,                          
                 "fields": [
                     {"name": "🎯 Trigger Reason", "value": reason, "inline": True},
                     {"name": "🛒 Purchase Amount", "value": str(purchase_amount), "inline": True},
@@ -247,7 +247,7 @@ class WebhookManager:
         if not self.app.webhook_url or not self.app.webhook_enabled:
             return
         
-        # Check if recovery notifications are enabled
+                                                     
         if not getattr(self.app, 'recovery_webhook_enabled', True):
             return
             

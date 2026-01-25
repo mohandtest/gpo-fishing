@@ -22,18 +22,18 @@ class ZoomController:
         self.zoom_available = ZOOM_AVAILABLE
         self.app = app
         
-        # Default settings (will be updated from app settings)
+                                                              
         self.zoom_settings = {
             "zoom_out_steps": 5,
             "zoom_in_steps": 3,
-            "step_delay": 0.05,  # Faster steps
-            "sequence_delay": 0.2  # Shorter delay between operations
+            "step_delay": 0.05,                
+            "sequence_delay": 0.2                                    
         }
         self.last_zoom_time = 0
-        self.zoom_cooldown = 1.0  # Reasonable cooldown to prevent conflicts
-        self.zoom_in_progress = False  # Lock to prevent overlapping zoom operations
+        self.zoom_cooldown = 1.0                                            
+        self.zoom_in_progress = False                                               
         
-        # Load settings from app if available
+                                             
         if self.app:
             self.load_settings_from_app()
         
@@ -47,13 +47,13 @@ class ZoomController:
             return
             
         try:
-            # Get settings from GUI variables
+                                             
             if hasattr(self.app, 'zoom_out_var'):
                 self.zoom_settings["zoom_out_steps"] = self.app.zoom_out_var.get()
             if hasattr(self.app, 'zoom_in_var'):
                 self.zoom_settings["zoom_in_steps"] = self.app.zoom_in_var.get()
                 
-            # Get settings from loaded settings
+                                               
             if hasattr(self.app, 'settings') and 'zoom_settings' in self.app.settings:
                 zoom_config = self.app.settings['zoom_settings']
                 self.zoom_settings["zoom_out_steps"] = zoom_config.get("zoom_out_steps", 5)
@@ -84,7 +84,7 @@ class ZoomController:
         if not self.zoom_available:
             return False
             
-        # Check cooldown and lock (allow if part of zoom sequence)
+                                                                  
         current_time = time.time()
         if not self.zoom_in_progress and current_time - self.last_zoom_time < self.zoom_cooldown:
             return False
@@ -93,11 +93,11 @@ class ZoomController:
         
         try:
             for i in range(steps):
-                # Scroll down (negative wheel delta = zoom out)
+                                                               
                 win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, -120, 0)
                 time.sleep(self.zoom_settings["step_delay"])
                 
-            # Only update timestamp if not part of a sequence
+                                                             
             if not self.zoom_in_progress:
                 self.last_zoom_time = current_time
             logging.info(f"Zoomed out {steps} steps")
@@ -120,7 +120,7 @@ class ZoomController:
         if not self.zoom_available:
             return False
             
-        # Check cooldown and lock (allow if part of zoom sequence)
+                                                                  
         current_time = time.time()
         if not self.zoom_in_progress and current_time - self.last_zoom_time < self.zoom_cooldown:
             return False
@@ -129,11 +129,11 @@ class ZoomController:
         
         try:
             for i in range(steps):
-                # Scroll up (positive wheel delta = zoom in)
+                                                            
                 win32api.mouse_event(win32con.MOUSEEVENTF_WHEEL, 0, 0, 120, 0)
                 time.sleep(self.zoom_settings["step_delay"])
                 
-            # Only update timestamp if not part of a sequence
+                                                             
             if not self.zoom_in_progress:
                 self.last_zoom_time = current_time
             logging.info(f"Zoomed in {steps} steps")
@@ -154,7 +154,7 @@ class ZoomController:
         if not self.zoom_available or self.zoom_in_progress:
             return False
             
-        # Check cooldown
+                        
         current_time = time.time()
         if current_time - self.last_zoom_time < self.zoom_cooldown:
             logging.info("Zoom operation skipped - cooldown active")
@@ -164,15 +164,15 @@ class ZoomController:
         try:
             logging.info("🔍 Starting zoom sequence...")
             
-            # First zoom out completely
+                                       
             if self.zoom_out():
-                # Wait between operations
+                                         
                 time.sleep(self.zoom_settings["sequence_delay"])
                 
-                # Then zoom in to optimal level
+                                               
                 zoom_success = self.zoom_in()
                 
-                # Force optimal layout coordinates when auto zoom is enabled
+                                                                            
                 if zoom_success and self.app:
                     self._force_optimal_layout_coordinates()
                 
@@ -190,12 +190,12 @@ class ZoomController:
     def _force_optimal_layout_coordinates(self):
         """Force the layout coordinates to optimal values for auto zoom mode"""
         try:
-            # Check if auto zoom is enabled
+                                           
             if not (hasattr(self.app, 'settings') and 
                    self.app.settings.get('zoom_settings', {}).get('auto_zoom_enabled', False)):
                 return
                 
-            # Optimal coordinates for auto zoom mode
+                                                    
             optimal_layout = {
                 "bar": {
                     "name": "BAR LAYOUT",
@@ -223,13 +223,13 @@ class ZoomController:
                 }
             }
             
-            # Update layout manager if available
+                                                
             if hasattr(self.app, 'layout_manager') and self.app.layout_manager:
                 self.app.layout_manager.layouts.update(optimal_layout)
                 self.app.layout_manager.save_layout_settings()
                 logging.info("🎯 Forced optimal layout coordinates for auto zoom mode")
                 
-            # Update settings
+                             
             if hasattr(self.app, 'settings'):
                 self.app.settings['layout_settings'] = optimal_layout
                 
@@ -247,7 +247,7 @@ class ZoomController:
             return False
             
         try:
-            # Zoom out more steps to ensure we're at minimum zoom
+                                                                 
             return self.zoom_out(steps=10)
             
         except Exception as e:

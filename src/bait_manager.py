@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+                      
 """
 Auto Bait Manager for GPO Autofish
 Handles intelligent bait selection and management
@@ -40,7 +40,7 @@ class BaitManager:
             x, y = self.app.top_bait_coords
             print(f"🎣 Selecting top bait at ({x}, {y})")
             self.app._click_at((x, y))
-            time.sleep(0.2)  # Brief pause after selection
+            time.sleep(0.2)                               
             return True
         except Exception as e:
             logging.error(f"Failed to select top bait: {e}")
@@ -49,11 +49,11 @@ class BaitManager:
     def select_bait_before_cast(self) -> bool:
         """Select top bait before casting rod - called every time before rod throw"""
         if not self.is_enabled():
-            return True  # Don't block fishing if disabled
+            return True                                   
             
         try:
             print("🎣 Selecting top bait before cast...")
             return self.select_top_bait()
         except Exception as e:
             logging.error(f"Failed to select bait before cast: {e}")
-            return True  # Don't block fishing on error
+            return True                                
