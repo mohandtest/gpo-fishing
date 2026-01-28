@@ -436,13 +436,19 @@ class FishingBot:
             import time
             
                                                                        
-            if hasattr(self.app, 'fishing_location') and self.app.fishing_location:
+            auto_mouse_enabled = getattr(self.app, 'auto_mouse_position_enabled', False)
+            if auto_mouse_enabled:
+                screen_width = win32api.GetSystemMetrics(0)
+                screen_height = win32api.GetSystemMetrics(1)
+                fishing_x = screen_width // 2
+                fishing_y = screen_height // 3
+                print(f"🎯 Auto mouse position enabled - using default position: ({fishing_x}, {fishing_y})")
+            elif hasattr(self.app, 'fishing_location') and self.app.fishing_location:
                 fishing_x, fishing_y = self.app.fishing_location
                 print(f"🎯 Moving mouse to custom fishing position: ({fishing_x}, {fishing_y})")
             else:
-                                                         
-                screen_width = win32api.GetSystemMetrics(0)               
-                screen_height = win32api.GetSystemMetrics(1)               
+                screen_width = win32api.GetSystemMetrics(0)
+                screen_height = win32api.GetSystemMetrics(1)
                 fishing_x = screen_width // 2
                 fishing_y = screen_height // 3
                 print(f"🎯 Moving mouse to default fishing position: ({fishing_x}, {fishing_y})")
@@ -577,6 +583,17 @@ class FishingBot:
         
         if hasattr(self.app, 'webhook_manager'):
             self.app.webhook_manager.send_purchase(amount)
+        
+                                           
+        if not hasattr(self.app, 'bait_purchased'):
+            self.app.bait_purchased = 0
+        self.app.bait_purchased += self.app.auto_purchase_amount
+        
+                                  
+        try:
+            self.app.root.after(0, lambda: self.app.update_stats_display())
+        except:
+            pass
         
         print(f"✅ Auto-purchase sequence completed for {amount} items")
         
@@ -1117,7 +1134,12 @@ class FishingBot:
         self.update_heartbeat()
         
                                              
-        auto_zoom_enabled = getattr(self.app, 'auto_zoom_var', None) and self.app.auto_zoom_var.get()
+        auto_zoom_enabled = getattr(self.app, 'auto_zoom_enabled', False)
+        if not auto_zoom_enabled and hasattr(self.app, 'auto_zoom_var'):
+            try:
+                auto_zoom_enabled = self.app.auto_zoom_var.get()
+            except Exception:
+                pass
         
         if auto_zoom_enabled:
             if hasattr(self.app, 'zoom_controller'):
@@ -1217,6 +1239,17 @@ class FishingBot:
                                                                        
         if drop_info and drop_info.get('has_fruit', False):
             print("🍎 Fruit detected in catch - running fruit storage sequence")
+            
+                                                   
+            if not hasattr(self.app, 'devil_fruits_caught'):
+                self.app.devil_fruits_caught = []
+            self.app.devil_fruits_caught.append(drop_info.get('drop_text', 'Unknown Fruit'))
+            
+                                  
+            try:
+                self.app.root.after(0, lambda: self.app.update_stats_display())
+            except:
+                pass
             
                                                        
             if (hasattr(self.app, 'webhook_manager') and 

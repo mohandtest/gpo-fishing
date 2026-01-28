@@ -34,14 +34,17 @@ class SettingsManager:
         zoom_settings = {
             'auto_zoom_enabled': getattr(self.app, 'auto_zoom_enabled', False),
             'zoom_out_steps': getattr(self.app.zoom_out_var, 'get', lambda: 5)() if hasattr(self.app, 'zoom_out_var') else 5,
-            'zoom_in_steps': getattr(self.app.zoom_in_var, 'get', lambda: 3)() if hasattr(self.app, 'zoom_in_var') else 3,
+            'zoom_in_steps': getattr(self.app.zoom_in_var, 'get', lambda: 8)() if hasattr(self.app, 'zoom_in_var') else 8,
             'step_delay': getattr(self.app, 'step_delay', 0.1),
             'sequence_delay': getattr(self.app, 'sequence_delay', 0.5),
-            'zoom_cooldown': getattr(self.app, 'zoom_cooldown', 2.0)
+            'zoom_cooldown': getattr(self.app, 'zoom_cooldown', 2.0),
+            'auto_mouse_position_enabled': getattr(self.app.mouse_pos_var, 'get', lambda: False)() if hasattr(self.app, 'mouse_pos_var') else False
         }
         
         if hasattr(self.app, 'auto_zoom_toggle_btn'):
             zoom_settings['auto_zoom_enabled'] = self.app.auto_zoom_toggle_btn.enabled
+        
+        print(f"💾 Zoom settings to save: auto_zoom_enabled={zoom_settings['auto_zoom_enabled']}, auto_mouse_position_enabled={zoom_settings['auto_mouse_position_enabled']}")
             
                                                                 
         preset_data = {
@@ -175,8 +178,10 @@ class SettingsManager:
                            
             zoom_settings = preset_data.get('zoom_settings', {})
             self.app.auto_zoom_enabled = zoom_settings.get('auto_zoom_enabled', False)
+            self.app.auto_mouse_position_enabled = zoom_settings.get('auto_mouse_position_enabled', False)
+            print(f"📖 Loaded zoom settings: auto_zoom_enabled={self.app.auto_zoom_enabled}, auto_mouse_position_enabled={self.app.auto_mouse_position_enabled}")
             self.app.zoom_out_steps = zoom_settings.get('zoom_out_steps', 5)
-            self.app.zoom_in_steps = zoom_settings.get('zoom_in_steps', 3)
+            self.app.zoom_in_steps = zoom_settings.get('zoom_in_steps', 8)
             self.app.step_delay = zoom_settings.get('step_delay', 0.1)
             self.app.sequence_delay = zoom_settings.get('sequence_delay', 0.5)
             self.app.zoom_cooldown = zoom_settings.get('zoom_cooldown', 2.0)
@@ -220,6 +225,8 @@ class SettingsManager:
                 self.app.webhook_interval_var.set(self.app.webhook_interval)
             
                                                                    
+            if hasattr(self.app, 'webhook_enabled_var'):
+                self.app.webhook_enabled_var.set(self.app.webhook_enabled)
             if hasattr(self.app, 'fish_progress_webhook_var'):
                 self.app.fish_progress_webhook_var.set(self.app.fish_progress_webhook_enabled)
             if hasattr(self.app, 'devil_fruit_webhook_var'):
@@ -244,6 +251,18 @@ class SettingsManager:
                 self.app.zoom_out_var.set(self.app.zoom_out_steps)
             if hasattr(self.app, 'zoom_in_var'):
                 self.app.zoom_in_var.set(self.app.zoom_in_steps)
+            if hasattr(self.app, 'auto_zoom_var'):
+                self.app.auto_zoom_var.set(self.app.auto_zoom_enabled)
+                print(f"✓ Set auto_zoom_var to {self.app.auto_zoom_enabled}")
+            if hasattr(self.app, 'zoom_var'):
+                self.app.zoom_var.set(self.app.auto_zoom_enabled)
+                print(f"✓ Set zoom_var (Step 3) to {self.app.auto_zoom_enabled}")
+            if hasattr(self.app, 'mouse_pos_var'):
+                print(f"🖱️ BEFORE mouse_pos_var.set(): mouse_pos_var={self.app.mouse_pos_var.get()}, auto_mouse_position_enabled={self.app.auto_mouse_position_enabled}")
+                self.app.mouse_pos_var.set(self.app.auto_mouse_position_enabled)
+                print(f"🖱️ AFTER mouse_pos_var.set(): mouse_pos_var={self.app.mouse_pos_var.get()}")
+            else:
+                print(f"❌ mouse_pos_var NOT FOUND! auto_mouse_position_enabled={self.app.auto_mouse_position_enabled}")
             
                                   
             if hasattr(self.app, 'point_buttons'):

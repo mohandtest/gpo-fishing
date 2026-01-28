@@ -1,59 +1,55 @@
 {
-  "auto_purchase_enabled": true,
-  "auto_purchase_amount": 10,
-  "loops_per_purchase": 10,
+  "auto_purchase_enabled": false,
+  "auto_purchase_amount": 100,
+  "loops_per_purchase": 1,
   "purchase_interval": 10,
   "point_coords": {
     "1": [
       801,
-      939
+      943
     ],
     "2": [
-      954,
+      962,
       941
     ],
     "3": [
-      1109,
+      1113,
       943
     ]
   },
   "fruit_coords": {
     "fruit_point": [
-      913,
-      830
-    ],
-    "bait_point": [
-      426,
-      949
+      910,
+      831
     ],
     "fruit_point_2": [
-      1008,
-      827
+      999,
+      831
     ]
   },
   "fishing_location": [
-    949,
-    300
+    1250,
+    417
   ],
-  "fruit_storage_enabled": true,
+  "fruit_storage_enabled": false,
   "fruit_storage_key": "2",
   "fruit_storage_key_2": "3",
   "rod_key": "1",
   "auto_bait_enabled": false,
   "top_bait_coords": [
-    825,
-    282
+    912,
+    767
   ],
   "top_bait_coords_2": [
-    779,
-    295
+    1021,
+    771
   ],
   "kp": 0.1,
-  "kd": 0.5,
-  "scan_timeout": 14.0,
+  "kd": 0.3,
+  "scan_timeout": 15.0,
   "wait_after_loss": 1.0,
   "smart_check_interval": 15.0,
-  "webhook_url": "D",
+  "webhook_url": "",
   "webhook_enabled": false,
   "webhook_interval": 10,
   "fish_progress_webhook_enabled": true,
@@ -64,7 +60,7 @@
   "bait_webhook_enabled": true,
   "ocr_performance_mode": "fast",
   "window_width": 600,
-  "window_height": 770,
+  "window_height": 815,
   "dark_theme": true,
   "current_theme": "dark",
   "layout_settings": {
@@ -81,10 +77,10 @@
         200
       ],
       "area": {
-        "x": 1000,
-        "y": 371,
-        "width": 263,
-        "height": 472
+        "x": 1049,
+        "y": 348,
+        "width": 233,
+        "height": 471
       },
       "description": "Fishing Bar Detection"
     },
@@ -101,8 +97,8 @@
         0
       ],
       "area": {
-        "x": 705,
-        "y": 76,
+        "x": 709,
+        "y": 56,
         "width": 497,
         "height": 122
       },
@@ -110,12 +106,13 @@
     }
   },
   "zoom_settings": {
-    "auto_zoom_enabled": false,
+    "auto_zoom_enabled": true,
+    "auto_mouse_position_enabled": true,
     "zoom_out_steps": 5,
-    "zoom_in_steps": 3,
+    "zoom_in_steps": 8,
     "step_delay": 0.1,
     "sequence_delay": 0.5,
     "zoom_cooldown": 2.0
   },
-  "last_saved": "2026-01-25T04:02:29.241517"
+  "last_saved": "2026-01-28T16:00:52.803944"
 }

@@ -161,6 +161,8 @@ class HotkeyGUI:
         self.purchase_click_delay = 1.0
         self.purchase_after_type_delay = 1.0
         self.fish_count = 0                                     
+        self.devil_fruits_caught = []                                   
+        self.bait_purchased = 0                                          
         
                                   
         self.webhook_url = ""
@@ -323,6 +325,9 @@ class HotkeyGUI:
         
         self.apply_theme()
         self.register_hotkeys()
+        
+                                                   
+        self.schedule_periodic_update()
         
                                                        
         window_width = getattr(self, 'window_width', 800)
@@ -1177,13 +1182,18 @@ The macro automatically presses 'E' to open the shop."""
     
     def create_compact_startup_section(self, parent):
         """Compact startup section for setup tab"""
-        self.zoom_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(parent, text="🔍 Auto Zoom (zooms out then back in)",
-                       variable=self.zoom_var).pack(anchor='w', pady=5)
+                                                                       
+        zoom_default = getattr(self, 'auto_zoom_enabled', False)
+        self.zoom_var = tk.BooleanVar(value=zoom_default)
+        zoom_check = ttk.Checkbutton(parent, text="🔍 Auto Zoom (zooms out then back in)",
+                       variable=self.zoom_var, command=self._on_zoom_var_change)
+        zoom_check.pack(anchor='w', pady=5)
         
-        self.mouse_pos_var = tk.BooleanVar(value=False)
-        ttk.Checkbutton(parent, text="🖱️ Auto Mouse Position (moves to fishing spot)",
-                       variable=self.mouse_pos_var).pack(anchor='w', pady=5)
+        mouse_pos_default = getattr(self, 'auto_mouse_position_enabled', False)
+        self.mouse_pos_var = tk.BooleanVar(value=mouse_pos_default)
+        mouse_check = ttk.Checkbutton(parent, text="🖱️ Auto Mouse Position (moves to fishing spot)",
+                       variable=self.mouse_pos_var, command=self._on_mouse_pos_var_change)
+        mouse_check.pack(anchor='w', pady=5)
     
     def create_compact_hotkeys_section(self, parent):
         """Compact hotkeys section for settings tab"""
@@ -1201,8 +1211,136 @@ The macro automatically presses 'E' to open the shop."""
             ttk.Label(row, text=f"{key}:", font=('Segoe UI', 10, 'bold'),
                      width=8).pack(side='left')
             ttk.Label(row, text=description, style='Description.TLabel').pack(side='left', padx=(10, 0))
+
+    def _sync_zoom_vars(self):
+        """Sync zoom_var (Step 3) with auto_zoom_var (Settings) and update auto_zoom_enabled"""
+        try:
+            if getattr(self, '_loading_settings', False):
+                return
+                
+            zoom_value = self.zoom_var.get()
+            
+                                    
+            if hasattr(self, 'auto_zoom_var'):
+                self.auto_zoom_var.set(zoom_value)
+            
+                                          
+            self.auto_zoom_enabled = zoom_value
+            
+                                     
+            self.auto_save_settings()
+        except Exception as e:
+            pass
+
+    def _sync_auto_zoom_var(self):
+        """Sync auto_zoom_var (Settings) with zoom_var (Step 3) and update auto_zoom_enabled"""
+        try:
+            if getattr(self, '_loading_settings', False):
+                return
+                
+            zoom_value = self.auto_zoom_var.get()
+            
+                                        
+            if hasattr(self, 'zoom_var'):
+                self.zoom_var.set(zoom_value)
+            
+                                          
+            self.auto_zoom_enabled = zoom_value
+            
+                                     
+            self.auto_save_settings()
+        except Exception as e:
+            pass
+
+    def _sync_auto_mouse_position_var(self):
+        """Sync auto_mouse_position_var (Settings) with mouse_pos_var (Step 3) and update auto_mouse_position_enabled"""
+        try:
+            if getattr(self, '_loading_settings', False):
+                return
+                
+            mouse_value = self.auto_mouse_position_var.get()
+            
+                                        
+            if hasattr(self, 'mouse_pos_var'):
+                self.mouse_pos_var.set(mouse_value)
+            
+                                          
+            self.auto_mouse_position_enabled = mouse_value
+            
+                                     
+            self.auto_save_settings()
+        except Exception as e:
+            pass
+
+    def _on_zoom_var_change(self):
+        """Handle zoom_var checkbox click (Step 3)"""
+        try:
+            loading_flag = getattr(self, '_loading_settings', False)
+            zoom_value = self.zoom_var.get()
+            print(f"🔍 ZOOM CLICK: _loading_settings={loading_flag}, zoom_value={zoom_value}")
+            
+            if loading_flag:
+                print(f"⏸️ BLOCKED: _loading_settings is True, skipping save")
+                return
+                
+            print(f"✅ ZOOM SAVE PROCEEDING: Setting auto_zoom_enabled={zoom_value}")
+            
+                                    
+            if hasattr(self, 'auto_zoom_var'):
+                self.auto_zoom_var.set(zoom_value)
+            
+                                          
+            self.auto_zoom_enabled = zoom_value
+            
+                                     
+            print(f"📞 Calling auto_save_settings() for zoom")
+            self.auto_save_settings()
+        except Exception as e:
+            print(f"❌ Error in _on_zoom_var_change: {e}")
+            pass
+
+    def _on_mouse_pos_var_change(self):
+        """Handle mouse_pos_var checkbox click (Step 3)"""
+        try:
+            loading_flag = getattr(self, '_loading_settings', False)
+            mouse_value = self.mouse_pos_var.get()
+            import traceback
+            caller = traceback.extract_stack()[-2].name
+            print(f"🖱️ MOUSE POS CHANGE TRIGGERED (from {caller}): _loading_settings={loading_flag}, mouse_value={mouse_value}")
+            
+            if loading_flag:
+                print(f"⏸️ BLOCKED: _loading_settings is True, skipping save")
+                return
+                
+            print(f"✅ MOUSE POS SAVE PROCEEDING: Setting auto_mouse_position_enabled={mouse_value}")
+            
+            if hasattr(self, 'auto_mouse_position_var'):
+                self.auto_mouse_position_var.set(mouse_value)
+                
+            self.auto_mouse_position_enabled = mouse_value
+            
+            print(f"📞 Calling auto_save_settings() for mouse_pos")
+            self.auto_save_settings()
+        except Exception as e:
+            print(f"❌ Error in _on_mouse_pos_var_change: {e}")
+            pass
     
-                                                   
+    def create_compact_hotkeys_section(self, parent):
+        """Compact hotkeys section for settings tab"""
+        hotkeys_info = [
+            ("F1", "Start/Stop Fishing"),
+            ("F2", "Toggle Overlay"),
+            ("F3", "Emergency Exit"),
+            ("F4", "Minimize to Taskbar")
+        ]
+        
+        for key, description in hotkeys_info:
+            row = ttk.Frame(parent)
+            row.pack(fill='x', pady=5)
+            
+            ttk.Label(row, text=f"{key}:", font=('Segoe UI', 10, 'bold'),
+                     width=8).pack(side='left')
+            ttk.Label(row, text=description, style='Description.TLabel').pack(side='left', padx=(10, 0))
     
     def add_activity(self, message):
         """Add message to activity log with enhanced styling"""
@@ -2046,9 +2184,13 @@ Sequence (per user spec):
                                     
         self.update_bait_status_display()
         
+                          
+        self.root.after(0, lambda: self.update_stats_display())
+        
                                          
         if self.webhook_enabled and self.webhook_counter >= self.webhook_interval:
-            self.webhook_manager.send_fishing_progress()
+            if self.fish_progress_webhook_enabled and self.webhook_manager:
+                self.webhook_manager.send_fishing_progress()
             self.webhook_counter = 0
 
     def reset_fish_counter(self):
@@ -2064,6 +2206,60 @@ Sequence (per user spec):
 
 
 
+    def update_stats_display(self):
+        """Update the stats display labels with current values"""
+        try:
+            if not hasattr(self, 'total_fish_stat'):
+                return
+                
+                                    
+            self.total_fish_stat.config(text=f'Total Fish Caught\n{self.fish_count}')
+            
+                                        
+            devil_fruits = len(getattr(self, 'devil_fruits_caught', []))
+            self.fruits_caught_stat.config(text=f'Devil Fruits Found\n{devil_fruits}')
+            
+                                   
+            if self.start_time:
+                if self.is_paused:
+                    elapsed = (self.pause_time - self.start_time) - self.total_paused_time
+                else:
+                    current_time = time.time()
+                    elapsed = (current_time - self.start_time) - self.total_paused_time
+                
+                hours = int(elapsed) // 3600
+                minutes = (int(elapsed) % 3600) // 60
+                seconds = int(elapsed) % 60
+                time_str = f'{hours:02d}:{minutes:02d}:{seconds:02d}'
+            else:
+                time_str = '00:00:00'
+            
+            self.session_time_stat.config(text=f'Session Time\n{time_str}')
+            
+                                       
+            bait_purchased = getattr(self, 'bait_purchased', 0)
+            self.bait_used_stat.config(text=f'Bait Purchased\n{bait_purchased}')
+        except Exception as e:
+            pass
+
+    def schedule_periodic_update(self):
+        """Schedule the periodic stats update to run every second"""
+        try:
+            self.periodic_update()
+        except Exception as e:
+            pass
+    
+    def periodic_update(self):
+        """Update stats every second to keep session time fresh"""
+        try:
+            if self.main_loop_active and self.start_time:
+                self.update_stats_display()
+        except Exception as e:
+            pass
+        finally:
+                                         
+            self.root.after(1000, self.periodic_update)
+    
     def update_bait_status_display(self):
         """Update bait status display"""
                                                        
@@ -2477,7 +2673,7 @@ Sequence (per user spec):
         row = 0
                                  
         self.webhook_enabled_var = tk.BooleanVar(value=self.webhook_enabled)
-        webhook_check = ttk.Checkbutton(frame, text='Enable Discord Webhook', variable=self.webhook_enabled_var)
+        webhook_check = ttk.Checkbutton(frame, text='Enable Discord Webhook', variable=self.webhook_enabled_var, command=self.auto_save_settings)
         webhook_check.grid(row=row, column=0, columnspan=2, pady=5)
         help_btn = ttk.Button(frame, text='?', width=3)
         help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
@@ -2513,7 +2709,7 @@ Sequence (per user spec):
         
                                      
         self.fish_progress_webhook_var = tk.BooleanVar(value=getattr(self, 'fish_progress_webhook_enabled', True))
-        fish_progress_check = ttk.Checkbutton(frame, text='🐟 Fish Progress Updates', variable=self.fish_progress_webhook_var)
+        fish_progress_check = ttk.Checkbutton(frame, text='🐟 Fish Progress Updates', variable=self.fish_progress_webhook_var, command=self.auto_save_settings)
         fish_progress_check.grid(row=row, column=0, columnspan=2, pady=2, sticky='w')
         help_btn = ttk.Button(frame, text='?', width=3)
         help_btn.grid(row=row, column=2, padx=(10, 0), pady=2)
@@ -2523,7 +2719,7 @@ Sequence (per user spec):
         
                                            
         self.devil_fruit_webhook_var = tk.BooleanVar(value=getattr(self, 'devil_fruit_webhook_enabled', True))
-        devil_fruit_check = ttk.Checkbutton(frame, text='🍎 Devil Fruit Catch Alerts', variable=self.devil_fruit_webhook_var)
+        devil_fruit_check = ttk.Checkbutton(frame, text='🍎 Devil Fruit Catch Alerts', variable=self.devil_fruit_webhook_var, command=self.auto_save_settings)
         devil_fruit_check.grid(row=row, column=0, columnspan=2, pady=2, sticky='w')
         help_btn = ttk.Button(frame, text='?', width=3)
         help_btn.grid(row=row, column=2, padx=(10, 0), pady=2)
@@ -2544,7 +2740,7 @@ Sequence (per user spec):
         
                                      
         self.purchase_webhook_var = tk.BooleanVar(value=getattr(self, 'purchase_webhook_enabled', True))
-        purchase_check = ttk.Checkbutton(frame, text='🛒 Auto Purchase Alerts', variable=self.purchase_webhook_var)
+        purchase_check = ttk.Checkbutton(frame, text='🛒 Auto Purchase Alerts', variable=self.purchase_webhook_var, command=self.auto_save_settings)
         purchase_check.grid(row=row, column=0, columnspan=2, pady=2, sticky='w')
         help_btn = ttk.Button(frame, text='?', width=3)
         help_btn.grid(row=row, column=2, padx=(10, 0), pady=2)
@@ -2554,7 +2750,7 @@ Sequence (per user spec):
         
                                       
         self.recovery_webhook_var = tk.BooleanVar(value=getattr(self, 'recovery_webhook_enabled', True))
-        recovery_check = ttk.Checkbutton(frame, text='🔄 Recovery/Error Alerts', variable=self.recovery_webhook_var)
+        recovery_check = ttk.Checkbutton(frame, text='🔄 Recovery/Error Alerts', variable=self.recovery_webhook_var, command=self.auto_save_settings)
         recovery_check.grid(row=row, column=0, columnspan=2, pady=2, sticky='w')
         help_btn = ttk.Button(frame, text='?', width=3)
         help_btn.grid(row=row, column=2, padx=(10, 0), pady=2)
@@ -2564,7 +2760,7 @@ Sequence (per user spec):
         
                                        
         self.bait_webhook_var = tk.BooleanVar(value=getattr(self, 'bait_webhook_enabled', True))
-        bait_check = ttk.Checkbutton(frame, text='🎣 Bait Management Alerts', variable=self.bait_webhook_var)
+        bait_check = ttk.Checkbutton(frame, text='🎣 Bait Management Alerts', variable=self.bait_webhook_var, command=self.auto_save_settings)
         bait_check.grid(row=row, column=0, columnspan=2, pady=2, sticky='w')
         help_btn = ttk.Button(frame, text='?', width=3)
         help_btn.grid(row=row, column=2, padx=(10, 0), pady=2)
@@ -2601,17 +2797,24 @@ Sequence (per user spec):
                                     command=self.auto_save_settings)
         zoom_check.grid(row=row, column=0, sticky='w', pady=2)
         ToolTip(zoom_check, "Automatically zoom out when fishing starts for better visibility")
+        self.auto_zoom_var.trace_add('write', lambda *args: self._sync_auto_zoom_var())
         
         row += 1
         
-                    
-        info_label = ttk.Label(frame, text="When enabled, automatically zooms out for optimal fishing view", 
-                              foreground="gray")
-        info_label.grid(row=row, column=0, sticky='w', pady=(0, 5))
+        mouse_default = getattr(self, 'auto_mouse_position_enabled', False)
+        self.auto_mouse_position_var = tk.BooleanVar(value=mouse_default)
+        mouse_check = ttk.Checkbutton(frame, text="Enable Auto Mouse Position on Startup",
+                                     variable=self.auto_mouse_position_var,
+                                     command=self.auto_save_settings)
+        mouse_check.grid(row=row, column=0, sticky='w', pady=2)
+        ToolTip(mouse_check, "Automatically move mouse to fishing location when fishing starts")
+        self.auto_mouse_position_var.trace_add('write', lambda *args: self._sync_auto_mouse_position_var())
+        
+        row += 1
         
                                                     
-        self.zoom_out_var = tk.IntVar(value=5)
-        self.zoom_in_var = tk.IntVar(value=8)
+        self.zoom_out_var = tk.IntVar(value=getattr(self, 'zoom_out_steps', 5))
+        self.zoom_in_var = tk.IntVar(value=getattr(self, 'zoom_in_steps', 8))
         
                                                        
         self.zoom_out_var.trace_add('write', lambda *args: (setattr(self, 'zoom_out_steps', self.zoom_out_var.get()), self.auto_save_settings()))
@@ -3680,8 +3883,10 @@ Sequence (per user spec):
 
     def auto_save_settings(self):
         """Auto-save current settings to default.json"""
-                                          
-        if getattr(self, '_loading_settings', False):
+        loading_flag = getattr(self, '_loading_settings', False)
+        print(f"💾 auto_save_settings() called, _loading_settings={loading_flag}")
+        
+        if loading_flag:
             print("⏸️ Skipping auto-save during initialization")
             return
             
@@ -3745,15 +3950,18 @@ Sequence (per user spec):
 
                                
                 'zoom_settings': {
-                    'auto_zoom_enabled': self.auto_zoom_var.get() if hasattr(self, 'auto_zoom_var') else False,
+                    'auto_zoom_enabled': getattr(self, 'auto_zoom_enabled', False),
+                    'auto_mouse_position_enabled': getattr(self, 'auto_mouse_position_enabled', False),
                     'zoom_out_steps': self.zoom_out_var.get() if hasattr(self, 'zoom_out_var') else 5,
-                    'zoom_in_steps': self.zoom_in_var.get() if hasattr(self, 'zoom_in_var') else 3,
+                    'zoom_in_steps': self.zoom_in_var.get() if hasattr(self, 'zoom_in_var') else 8,
                     'step_delay': 0.1,
                     'sequence_delay': 0.5,
                     'zoom_cooldown': 2.0
                 },
                 'last_saved': datetime.now().isoformat()
             }
+            
+            print(f"💾 Zoom settings to save: auto_zoom_enabled={preset_data['zoom_settings']['auto_zoom_enabled']}, auto_mouse_position_enabled={preset_data['zoom_settings']['auto_mouse_position_enabled']}")
             
             settings_file = "default_settings.json"
             with open(settings_file, 'w') as f:
@@ -4003,24 +4211,33 @@ Sequence (per user spec):
         class LogWriter:
             def __init__(self, gui, original_stream):
                 self.gui = gui
-                self.original_stream = original_stream
+                # Some frozen builds (or when launched via vbs) give None for stdout/stderr
+                # so fall back to the real std streams if available.
+                self.original_stream = original_stream or getattr(sys, '__stdout__', None)
             
             def write(self, message):
-                                          
-                self.original_stream.write(message)
-                self.original_stream.flush()
+                # Skip if no underlying stream is available (silent logging)
+                if self.original_stream:
+                    try:
+                        self.original_stream.write(message)
+                        self.original_stream.flush()
+                    except Exception:
+                        pass
                 
-                                                         
+                # Also mirror into the activity log, if it exists
                 if hasattr(self.gui, 'activity_log') and message.strip():
                     try:
                         self.gui.root.after(0, lambda msg=message: self.gui.add_activity(msg.strip()))
-                    except:
+                    except Exception:
                         pass
             
             def flush(self):
-                self.original_stream.flush()
+                if self.original_stream:
+                    try:
+                        self.original_stream.flush()
+                    except Exception:
+                        pass
         
-                                    
         sys.stdout = LogWriter(self, sys.stdout)
         sys.stderr = LogWriter(self, sys.stderr)
 
@@ -4220,12 +4437,20 @@ Sequence (per user spec):
                                                                               
             try:
                 zoom_settings = preset_data.get('zoom_settings', {})
+                self.auto_zoom_enabled = zoom_settings.get('auto_zoom_enabled', False)
+                self.auto_mouse_position_enabled = zoom_settings.get('auto_mouse_position_enabled', False)
                 if hasattr(self, 'auto_zoom_var') and self.auto_zoom_var:
-                    self.auto_zoom_var.set(zoom_settings.get('auto_zoom_enabled', False))
+                    self.auto_zoom_var.set(self.auto_zoom_enabled)
+                if hasattr(self, 'zoom_var') and self.zoom_var:
+                    self.zoom_var.set(self.auto_zoom_enabled)
+                if hasattr(self, 'auto_mouse_position_var') and self.auto_mouse_position_var:
+                    self.auto_mouse_position_var.set(self.auto_mouse_position_enabled)
+                if hasattr(self, 'mouse_pos_var') and self.mouse_pos_var:
+                    self.mouse_pos_var.set(self.auto_mouse_position_enabled)
                 if hasattr(self, 'zoom_out_var') and self.zoom_out_var:
                     self.zoom_out_var.set(zoom_settings.get('zoom_out_steps', 5))
                 if hasattr(self, 'zoom_in_var') and self.zoom_in_var:
-                    self.zoom_in_var.set(zoom_settings.get('zoom_in_steps', 3))
+                    self.zoom_in_var.set(zoom_settings.get('zoom_in_steps', 8))
             except AttributeError:
                 pass                                      
             
@@ -4238,7 +4463,7 @@ Sequence (per user spec):
                     zoom_settings = preset_data.get('zoom_settings', {})
                     self.zoom_controller.update_settings({
                         'zoom_out_steps': zoom_settings.get('zoom_out_steps', 5),
-                        'zoom_in_steps': zoom_settings.get('zoom_in_steps', 3),
+                        'zoom_in_steps': zoom_settings.get('zoom_in_steps', 8),
                         'step_delay': zoom_settings.get('step_delay', 0.1),
                         'sequence_delay': zoom_settings.get('sequence_delay', 0.5),
                         'zoom_cooldown': zoom_settings.get('zoom_cooldown', 2.0)
