@@ -1081,18 +1081,22 @@ class FishingBot:
                                 self.app.previous_error = normalized_error
                                 pd_output = self.app.kp * normalized_error + self.app.kd * derivative
                                 
-                                print(f'Error: {raw_error}px, PD: {pd_output:.2f}, Fish: {largest_section["middle"]}, Center Target: {white_center_y}')
+                                print(f'Error: {raw_error}px, PD: {pd_output:.2f}, Fish: {largest_section["middle"]}, Center Target: {white_center_y}, Clicking: {self.app.is_clicking}')
                                 
-                                # Add hysteresis/deadband to prevent oscillation at edges
-                                threshold = 0.01
-                                if pd_output > threshold:
-                                    if not self.app.is_clicking:
-                                        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-                                        self.app.is_clicking = True
-                                elif pd_output < -threshold:
-                                    if self.app.is_clicking:
+                                # Hysteresis-based control to prevent oscillation when fish is stable
+                                hold_threshold = 0.05   # Threshold to START holding
+                                release_threshold = -0.05  # Threshold to START releasing
+                                
+                                if self.app.is_clicking:
+                                    # Currently holding - only release if error is strongly negative
+                                    if pd_output < release_threshold:
                                         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
                                         self.app.is_clicking = False
+                                else:
+                                    # Currently releasing - only hold if error is strongly positive
+                                    if pd_output > hold_threshold:
+                                        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+                                        self.app.is_clicking = True
                             
                             time.sleep(0.1)
                         
