@@ -784,6 +784,7 @@ class FishingBot:
                         
                         detection_start_time = time.time()
                         last_spawn_check = time.time()
+                        last_click_time = time.time()  # For timer-based click control
                         spawn_check_interval = 4.0                                                  
                         
                         while self.app.main_loop_active and not self.force_stop_flag:
@@ -1083,26 +1084,32 @@ class FishingBot:
                                 
                                 print(f'Error: {raw_error}px, PD: {pd_output:.2f}, Fish: {largest_section["middle"]}, Center Target: {white_center_y}, Clicking: {self.app.is_clicking}')
                                 
-                                # Momentum-aware control with pulse mode for stability
-                                # When fish is near center, use rapid clicks to prevent overshoot
-                                center_threshold = 0.015  # Zone where we use pulse clicks
-                                aggressive_threshold = 0.05  # Zone where we use continuous hold/release
+                                # Simple timer-based control for stability
+                                # When fish is near center: single click every 0.4s to hold it steady
+                                # When fish is far: continuous hold/release for momentum correction
+                                center_threshold = 0.02  # Zone for timer-based clicks
+                                aggressive_threshold = 0.06  # Zone for continuous control
+                                click_interval = 0.4  # Click every 0.4 seconds to hold
+                                
+                                current_time = time.time()
                                 
                                 if abs(normalized_error) < center_threshold:
-                                    # Fish is very close to center - use rapid pulses to hold it steady
-                                    if pd_output > 0.002:  # Fish slightly below center
-                                        # Small pulse: 30ms click
-                                        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-                                        time.sleep(0.03)
-                                        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
-                                        self.app.is_clicking = False
-                                    elif pd_output < -0.002:  # Fish slightly above center
-                                        # Small pause: release for 50ms
+                                    # Fish is stable near center - use single click every 0.4s
+                                    if pd_output > 0.005:  # Fish needs to be held down
+                                        if current_time - last_click_time > click_interval:
+                                            # Single click to hold
+                                            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+                                            time.sleep(0.05)  # 50ms click
+                                            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+                                            last_click_time = current_time
+                                            self.app.is_clicking = False
+                                    else:
+                                        # Fish is above center or at center - just release and wait
                                         if self.app.is_clicking:
                                             win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
                                             self.app.is_clicking = False
                                 else:
-                                    # Fish is far from center - use continuous hold/release (momentum correction)
+                                    # Fish is far from center - use continuous hold/release for momentum correction
                                     if self.app.is_clicking:
                                         # Currently holding - release if fish is above center
                                         if pd_output < -aggressive_threshold:
