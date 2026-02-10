@@ -1083,20 +1083,36 @@ class FishingBot:
                                 
                                 print(f'Error: {raw_error}px, PD: {pd_output:.2f}, Fish: {largest_section["middle"]}, Center Target: {white_center_y}, Clicking: {self.app.is_clicking}')
                                 
-                                # Hysteresis-based control to prevent oscillation when fish is stable
-                                hold_threshold = 0.05   # Threshold to START holding
-                                release_threshold = -0.05  # Threshold to START releasing
+                                # Momentum-aware control with pulse mode for stability
+                                # When fish is near center, use rapid clicks to prevent overshoot
+                                center_threshold = 0.015  # Zone where we use pulse clicks
+                                aggressive_threshold = 0.05  # Zone where we use continuous hold/release
                                 
-                                if self.app.is_clicking:
-                                    # Currently holding - only release if error is strongly negative
-                                    if pd_output < release_threshold:
+                                if abs(normalized_error) < center_threshold:
+                                    # Fish is very close to center - use rapid pulses to hold it steady
+                                    if pd_output > 0.002:  # Fish slightly below center
+                                        # Small pulse: 30ms click
+                                        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+                                        time.sleep(0.03)
                                         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
                                         self.app.is_clicking = False
+                                    elif pd_output < -0.002:  # Fish slightly above center
+                                        # Small pause: release for 50ms
+                                        if self.app.is_clicking:
+                                            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+                                            self.app.is_clicking = False
                                 else:
-                                    # Currently releasing - only hold if error is strongly positive
-                                    if pd_output > hold_threshold:
-                                        win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
-                                        self.app.is_clicking = True
+                                    # Fish is far from center - use continuous hold/release (momentum correction)
+                                    if self.app.is_clicking:
+                                        # Currently holding - release if fish is above center
+                                        if pd_output < -aggressive_threshold:
+                                            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
+                                            self.app.is_clicking = False
+                                    else:
+                                        # Currently releasing - hold if fish is below center
+                                        if pd_output > aggressive_threshold:
+                                            win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
+                                            self.app.is_clicking = True
                             
                             time.sleep(0.1)
                         
