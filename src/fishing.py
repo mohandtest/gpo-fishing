@@ -1031,6 +1031,7 @@ class FishingBot:
                             if white_top_y is not None and white_bottom_y is not None:
                                 white_height = white_bottom_y - white_top_y + 1
                                 max_gap = white_height * 2
+                                white_center_y = (white_top_y + white_bottom_y) // 2  # Target center of white bar
                             
                                                                 
                             dark_sections = []
@@ -1073,20 +1074,22 @@ class FishingBot:
                                     section['size'] = section['end'] - section['start'] + 1
                                 largest_section = max(dark_sections, key=lambda s: s['size'])
                                 
-                                raw_error = white_top_y - largest_section['middle']
+                                # Control target: keep fish center at the white bar center
+                                raw_error = largest_section['middle'] - white_center_y
                                 normalized_error = raw_error / real_height if real_height > 0 else raw_error
                                 derivative = normalized_error - self.app.previous_error
                                 self.app.previous_error = normalized_error
                                 pd_output = self.app.kp * normalized_error + self.app.kd * derivative
                                 
-                                print(f'Error: {raw_error}px, PD: {pd_output:.2f}')
+                                print(f'Error: {raw_error}px, PD: {pd_output:.2f}, Fish: {largest_section["middle"]}, Center Target: {white_center_y}')
                                 
-                                                               
-                                if pd_output > 0:
+                                # Add hysteresis/deadband to prevent oscillation at edges
+                                threshold = 0.01
+                                if pd_output > threshold:
                                     if not self.app.is_clicking:
                                         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTDOWN, 0, 0, 0, 0)
                                         self.app.is_clicking = True
-                                else:
+                                elif pd_output < -threshold:
                                     if self.app.is_clicking:
                                         win32api.mouse_event(win32con.MOUSEEVENTF_LEFTUP, 0, 0, 0, 0)
                                         self.app.is_clicking = False
