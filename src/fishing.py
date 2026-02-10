@@ -1073,7 +1073,7 @@ class FishingBot:
                                     section['size'] = section['end'] - section['start'] + 1
                                 largest_section = max(dark_sections, key=lambda s: s['size'])
                                 
-                                raw_error = largest_section['middle'] - white_top_y
+                                raw_error = white_top_y - largest_section['middle']
                                 normalized_error = raw_error / real_height if real_height > 0 else raw_error
                                 derivative = normalized_error - self.app.previous_error
                                 self.app.previous_error = normalized_error
