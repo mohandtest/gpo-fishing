@@ -242,8 +242,8 @@ class HotkeyGUI:
             self.silent_mode = True
         
                             
-        self.dark_theme = True                         
-        self.current_theme = "red"                            
+        self.dark_theme = False                        
+        self.current_theme = "pink"                           
 
         self.collapsible_sections = {}
         self.theme_window = None
@@ -254,6 +254,7 @@ class HotkeyGUI:
         self.auto_purchase_var = None
         self.auto_purchase_amount = 100
         self.loops_per_purchase = 1
+        self.link_purchase_to_amount = False
         
                                   
         self.theme_manager = ThemeManager(self)
@@ -330,12 +331,12 @@ class HotkeyGUI:
         self.schedule_periodic_update()
         
                                                        
-        window_width = getattr(self, 'window_width', 800)
+        window_width = getattr(self, 'window_width', 900)
         window_height = getattr(self, 'window_height', 700)
         self.root.geometry(f'{window_width}x{window_height}')
         self.root.resizable(True, True)
         self.root.update_idletasks()
-        self.root.minsize(600, 650)                            
+        self.root.minsize(480, 500)                            
         
                                                
         self.root.bind('<Configure>', self.on_window_resize)
@@ -452,21 +453,9 @@ class HotkeyGUI:
         header_frame.grid(row=current_row, column=0, sticky='ew', pady=(0, 15))
         header_frame.columnconfigure(0, weight=1)
         
-                         
-        try:
-            if PIL_AVAILABLE and os.path.exists("images/icon.webp"):
-                logo_image = Image.open("images/icon.webp")
-                logo_image = logo_image.resize((48, 48), Image.Resampling.LANCZOS)
-                logo_photo = ImageTk.PhotoImage(logo_image)
-                logo_label = ttk.Label(header_frame, image=logo_photo)
-                logo_label.image = logo_photo
-                logo_label.grid(row=0, column=0, pady=(0, 8))
-        except Exception as e:
-            print(f"Could not load header logo: {e}")
-        
                                  
         title_container = ttk.Frame(header_frame)
-        title_container.grid(row=1, column=0)
+        title_container.grid(row=0, column=0)
         
         title = ttk.Label(title_container, text='GPO Autofish', style='Title.TLabel')
         title.pack(side=tk.LEFT, padx=(0, 10))
@@ -477,13 +466,13 @@ class HotkeyGUI:
         v3_badge.pack(side=tk.LEFT)
         
                   
-        credits = ttk.Label(header_frame, text='By Ariel', 
+        credits = ttk.Label(header_frame, text='Made by arieldev • Forked by mohandtest', 
                            style='Subtitle.TLabel')
-        credits.grid(row=2, column=0, pady=(5, 10))
+        credits.grid(row=1, column=0, pady=(5, 10))
         
                               
         toolbar = ttk.Frame(header_frame)
-        toolbar.grid(row=3, column=0, pady=(10, 0))
+        toolbar.grid(row=2, column=0, pady=(10, 0))
         
         self.settings_btn = ttk.Button(toolbar, text='⚙️ Settings', 
                                       command=self.open_settings_window, style='TButton')
@@ -2416,10 +2405,13 @@ Sequence (per user spec):
         self.amount_var.trace_add('write', lambda *args: self.auto_save_settings())
         help_btn = ttk.Button(frame, text='?', width=3)
         help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
-        ToolTip(help_btn, "How much bait to buy each time (e.g., 10 = buy 10 bait)")
+        ToolTip(help_btn, "How much bait to buy each time (e.g., 100 = buy 100 bait)")
         def update_amount(*args):
             try:
                 self.auto_purchase_amount = self.amount_var.get()
+                                                                           
+                if hasattr(self, 'link_purchase_to_amount_var') and self.link_purchase_to_amount_var.get():
+                    self.loops_var.set(max(1, self.auto_purchase_amount))
             except (tk.TclError, ValueError):
                 pass                                  
         self.amount_var.trace_add('write', update_amount)
@@ -2430,13 +2422,13 @@ Sequence (per user spec):
         row += 1
         
                             
-        ttk.Label(frame, text='Loops per Purchase:').grid(row=row, column=0, sticky='e', pady=5, padx=(0, 10))
+        ttk.Label(frame, text='Buy every X fish:').grid(row=row, column=0, sticky='e', pady=5, padx=(0, 10))
         self.loops_var = tk.IntVar(value=10)
         loops_spinbox = ttk.Spinbox(frame, from_=1, to=1000000, increment=1, textvariable=self.loops_var, width=10)
         loops_spinbox.grid(row=row, column=1, pady=5, sticky='w')
         help_btn = ttk.Button(frame, text='?', width=3)
         help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
-        ToolTip(help_btn, "Buy bait every X fish caught (e.g., 10 = buy bait after every 10 fish)")
+        ToolTip(help_btn, "How often to buy bait (e.g., 100 = buy every 100 fish caught)")
         def update_loops(*args):
             try:
                 self.loops_per_purchase = self.loops_var.get()
@@ -2449,6 +2441,17 @@ Sequence (per user spec):
             self.loops_per_purchase = self.loops_var.get()
         except (tk.TclError, ValueError):
             self.loops_per_purchase = 10
+        row += 1
+        
+                          
+        ttk.Label(frame, text='Link to Amount:').grid(row=row, column=0, sticky='e', pady=5, padx=(0, 10))
+        self.link_purchase_to_amount_var = tk.BooleanVar(value=False)
+        link_check = ttk.Checkbutton(frame, variable=self.link_purchase_to_amount_var, text='Auto-sync')
+        link_check.grid(row=row, column=1, pady=5, sticky='w')
+        help_btn = ttk.Button(frame, text='?', width=3)
+        help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
+        ToolTip(help_btn, "When enabled: buy frequency automatically matches amount (e.g., buy 100 every 100 fish)")
+        self.link_purchase_to_amount_var.trace_add('write', lambda *args: self.auto_save_settings())
         row += 1
         
                                          
@@ -3902,6 +3905,7 @@ Sequence (per user spec):
                 'auto_purchase_enabled': self.auto_purchase_var.get() if hasattr(self, 'auto_purchase_var') else False,
                 'auto_purchase_amount': self._safe_get_int(self.amount_var, getattr(self, 'auto_purchase_amount', 100)) if hasattr(self, 'amount_var') else 100,
                 'loops_per_purchase': self._safe_get_int(self.loops_var, getattr(self, 'loops_per_purchase', 1)) if hasattr(self, 'loops_var') else 1,
+                'link_purchase_to_amount': self.link_purchase_to_amount_var.get() if hasattr(self, 'link_purchase_to_amount_var') else False,
                 'purchase_interval': self.purchase_interval.get() if hasattr(self, 'purchase_interval') else 0,
                 'point_coords': getattr(self, 'point_coords', {}),
                 
@@ -4069,6 +4073,9 @@ Sequence (per user spec):
             self.loops_per_purchase = preset_data.get('loops_per_purchase', 1)
             if hasattr(self, 'loops_var'):
                 self.loops_var.set(self.loops_per_purchase)
+            
+            if hasattr(self, 'link_purchase_to_amount_var'):
+                self.link_purchase_to_amount_var.set(preset_data.get('link_purchase_to_amount', False))
             
                                                                    
             loaded_coords = preset_data.get('point_coords', {})
@@ -4281,6 +4288,7 @@ Sequence (per user spec):
             self.auto_purchase_amount = preset_data.get('auto_purchase_amount', 100)
             self.loops_per_purchase = preset_data.get('loops_per_purchase', 1)
             self.purchase_interval_value = preset_data.get('purchase_interval', 0)
+            self.link_purchase_to_amount = preset_data.get('link_purchase_to_amount', False)
             
                                 
             self.auto_zoom_enabled = preset_data.get('zoom_settings', {}).get('auto_zoom_enabled', False)
@@ -4376,6 +4384,8 @@ Sequence (per user spec):
                 self.amount_var.set(self.auto_purchase_amount)
             if hasattr(self, 'loops_var') and self.loops_var:
                 self.loops_var.set(self.loops_per_purchase)
+            if hasattr(self, 'link_purchase_to_amount_var') and self.link_purchase_to_amount_var:
+                self.link_purchase_to_amount_var.set(getattr(self, 'link_purchase_to_amount', False))
             if hasattr(self, 'purchase_interval') and self.purchase_interval:
                 self.purchase_interval.set(preset_data.get('purchase_interval', 0))
                 
