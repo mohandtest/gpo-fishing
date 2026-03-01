@@ -242,8 +242,8 @@ class HotkeyGUI:
             self.silent_mode = True
         
                             
-        self.dark_theme = True                         
-        self.current_theme = "red"                            
+        self.dark_theme = False                        
+        self.current_theme = "pink"                           
 
         self.collapsible_sections = {}
         self.theme_window = None
@@ -330,12 +330,12 @@ class HotkeyGUI:
         self.schedule_periodic_update()
         
                                                        
-        window_width = getattr(self, 'window_width', 800)
+        window_width = getattr(self, 'window_width', 900)
         window_height = getattr(self, 'window_height', 700)
         self.root.geometry(f'{window_width}x{window_height}')
         self.root.resizable(True, True)
         self.root.update_idletasks()
-        self.root.minsize(600, 650)                            
+        self.root.minsize(480, 500)                            
         
                                                
         self.root.bind('<Configure>', self.on_window_resize)
@@ -452,21 +452,9 @@ class HotkeyGUI:
         header_frame.grid(row=current_row, column=0, sticky='ew', pady=(0, 15))
         header_frame.columnconfigure(0, weight=1)
         
-                         
-        try:
-            if PIL_AVAILABLE and os.path.exists("images/icon.webp"):
-                logo_image = Image.open("images/icon.webp")
-                logo_image = logo_image.resize((48, 48), Image.Resampling.LANCZOS)
-                logo_photo = ImageTk.PhotoImage(logo_image)
-                logo_label = ttk.Label(header_frame, image=logo_photo)
-                logo_label.image = logo_photo
-                logo_label.grid(row=0, column=0, pady=(0, 8))
-        except Exception as e:
-            print(f"Could not load header logo: {e}")
-        
                                  
         title_container = ttk.Frame(header_frame)
-        title_container.grid(row=1, column=0)
+        title_container.grid(row=0, column=0)
         
         title = ttk.Label(title_container, text='GPO Autofish', style='Title.TLabel')
         title.pack(side=tk.LEFT, padx=(0, 10))
@@ -477,13 +465,13 @@ class HotkeyGUI:
         v3_badge.pack(side=tk.LEFT)
         
                   
-        credits = ttk.Label(header_frame, text='By Ariel', 
+        credits = ttk.Label(header_frame, text='Made by arieldev • Forked by mohandtest', 
                            style='Subtitle.TLabel')
-        credits.grid(row=2, column=0, pady=(5, 10))
+        credits.grid(row=1, column=0, pady=(5, 10))
         
                               
         toolbar = ttk.Frame(header_frame)
-        toolbar.grid(row=3, column=0, pady=(10, 0))
+        toolbar.grid(row=2, column=0, pady=(10, 0))
         
         self.settings_btn = ttk.Button(toolbar, text='⚙️ Settings', 
                                       command=self.open_settings_window, style='TButton')
