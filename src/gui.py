@@ -2396,6 +2396,17 @@ Sequence (per user spec):
         self.auto_purchase_var.trace_add('write', lambda *args: self.auto_save_settings())
         row += 1
         
+                          
+        ttk.Label(frame, text='Link to Amount:').grid(row=row, column=0, sticky='e', pady=5, padx=(0, 10))
+        self.link_purchase_to_amount_var = tk.BooleanVar(value=False)
+        link_check = ttk.Checkbutton(frame, variable=self.link_purchase_to_amount_var, text='Auto-sync')
+        link_check.grid(row=row, column=1, pady=5, sticky='w')
+        help_btn = ttk.Button(frame, text='?', width=3)
+        help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
+        ToolTip(help_btn, "When enabled: buy frequency automatically matches amount (e.g., buy 100 every 100 fish)")
+        self.link_purchase_to_amount_var.trace_add('write', lambda *args: self.auto_save_settings())
+        row += 1
+        
                          
         ttk.Label(frame, text='Amount:').grid(row=row, column=0, sticky='e', pady=5, padx=(0, 10))
         self.amount_var = tk.IntVar(value=10)
@@ -2441,17 +2452,6 @@ Sequence (per user spec):
             self.loops_per_purchase = self.loops_var.get()
         except (tk.TclError, ValueError):
             self.loops_per_purchase = 10
-        row += 1
-        
-                          
-        ttk.Label(frame, text='Link to Amount:').grid(row=row, column=0, sticky='e', pady=5, padx=(0, 10))
-        self.link_purchase_to_amount_var = tk.BooleanVar(value=False)
-        link_check = ttk.Checkbutton(frame, variable=self.link_purchase_to_amount_var, text='Auto-sync')
-        link_check.grid(row=row, column=1, pady=5, sticky='w')
-        help_btn = ttk.Button(frame, text='?', width=3)
-        help_btn.grid(row=row, column=2, padx=(10, 0), pady=5)
-        ToolTip(help_btn, "When enabled: buy frequency automatically matches amount (e.g., buy 100 every 100 fish)")
-        self.link_purchase_to_amount_var.trace_add('write', lambda *args: self.auto_save_settings())
         row += 1
         
                                          
