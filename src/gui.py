@@ -1068,17 +1068,43 @@ Tip: Use F2 to quickly toggle overlays while positioning them."""
                        command=self.toggle_auto_purchase).pack(anchor='w', pady=5)
         
                            
-        interval_frame = ttk.Frame(card)
-        interval_frame.pack(fill='x', pady=10)
+        settings_frame = ttk.LabelFrame(card, text="Purchase Settings", padding=10)
+        settings_frame.pack(fill='x', pady=10)
+        settings_frame.columnconfigure(1, weight=1)
         
-        ttk.Label(interval_frame, text="Buy bait every:").pack(side='left', padx=(0, 10))
-                                                               
-        interval_default = getattr(self, 'purchase_interval_value', 0)
-        self.purchase_interval = tk.IntVar(value=interval_default)
-        purchase_entry = ttk.Entry(interval_frame, textvariable=self.purchase_interval, width=8)
-        purchase_entry.pack(side='left', padx=(0, 5))
-        purchase_entry.bind('<FocusOut>', lambda e: self.auto_save_settings())
-        ttk.Label(interval_frame, text="fish").pack(side='left')
+                         
+        ttk.Label(settings_frame, text='Amount to buy:').grid(row=0, column=0, sticky='e', pady=5, padx=(0, 10))
+        self.amount_var = tk.IntVar(value=10)
+        amount_spinbox = ttk.Spinbox(settings_frame, from_=0, to=1000000, increment=1, textvariable=self.amount_var, width=15)
+        amount_spinbox.grid(row=0, column=1, pady=5, sticky='w')
+        
+        def update_amount(*args):
+            try:
+                self.auto_purchase_amount = self.amount_var.get()
+                if hasattr(self, 'link_purchase_to_amount_var') and self.link_purchase_to_amount_var.get():
+                    self.loops_var.set(max(1, self.auto_purchase_amount))
+            except (tk.TclError, ValueError):
+                pass
+        self.amount_var.trace_add('write', update_amount)
+        
+                            
+        ttk.Label(settings_frame, text='Buy every X fish:').grid(row=1, column=0, sticky='e', pady=5, padx=(0, 10))
+        self.loops_var = tk.IntVar(value=10)
+        loops_spinbox = ttk.Spinbox(settings_frame, from_=1, to=1000000, increment=1, textvariable=self.loops_var, width=15)
+        loops_spinbox.grid(row=1, column=1, pady=5, sticky='w')
+        
+        def update_loops(*args):
+            try:
+                self.loops_per_purchase = self.loops_var.get()
+            except (tk.TclError, ValueError):
+                pass
+        self.loops_var.trace_add('write', update_loops)
+        
+                          
+        ttk.Label(settings_frame, text='Link to Amount:').grid(row=2, column=0, sticky='e', pady=5, padx=(0, 10))
+        self.link_purchase_to_amount_var = tk.BooleanVar(value=False)
+        link_check = ttk.Checkbutton(settings_frame, variable=self.link_purchase_to_amount_var, text='Auto-sync frequency to amount')
+        link_check.grid(row=2, column=1, pady=5, sticky='w')
         
                                 
         guide_text = """Auto Purchase Setup Guide:
