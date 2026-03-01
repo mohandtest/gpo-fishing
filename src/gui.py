@@ -2329,10 +2329,10 @@ Sequence (per user spec):
             minutes = int((elapsed % 3600) // 60)
             seconds = int(elapsed % 60)
             
-            runtime_text = f'⏱️ Runtime: {hours:02d}:{minutes:02d}:{seconds:02d}'
+            runtime_text = f'Session Time\n{hours:02d}:{minutes:02d}:{seconds:02d}'
             
             try:
-                self.root.after(0, lambda: self.runtime_label.config(text=runtime_text))
+                self.root.after(0, lambda: self.session_time_stat.config(text=runtime_text))
             except Exception:
                 pass
         
